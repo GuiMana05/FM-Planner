@@ -1,0 +1,3548 @@
+<!DOCTYPE html>
+<html lang="pt-PT">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>FM Squad Planner</title>
+  <style>
+    :root {
+      --bg: #0b0f14;
+      --panel: #11161d;
+      --panel-2: #161d25;
+      --panel-3: #1a222c;
+      --panel-4: #202a35;
+      --line: #25303b;
+      --line-soft: #1c252f;
+      --text: #e7edf2;
+      --muted: #99a5b3;
+      --faint: #6f7b88;
+      --green: #7fd39a;
+      --green-2: #3f8a5c;
+      --red: #e08a84;
+      --red-2: #c0524a;
+      --amber: #d4c86a;
+      --amber-2: #8d8240;
+      --blue: #7ca8ff;
+      --chip: rgba(255,255,255,0.05);
+      --shadow: 0 18px 48px rgba(0,0,0,0.35);
+      --radius: 14px;
+      --radius-sm: 10px;
+    }
+
+    * { box-sizing: border-box; }
+    html, body { margin: 0; padding: 0; background: var(--bg); color: var(--text); font-family: Inter, system-ui, sans-serif; }
+    body { min-height: 100vh; }
+    button, input, select, textarea { font: inherit; }
+    button { cursor: pointer; }
+    table { width: 100%; border-collapse: collapse; }
+    th {
+      text-align: left;
+      font-size: 11px;
+      text-transform: uppercase;
+      letter-spacing: .06em;
+      color: var(--muted);
+      padding: 10px 12px;
+      border-bottom: 1px solid var(--line);
+      white-space: nowrap;
+    }
+    td {
+      padding: 10px 12px;
+      border-bottom: 1px solid var(--line-soft);
+      font-size: 13.5px;
+      vertical-align: top;
+    }
+    tbody tr:hover td { background: rgba(255,255,255,0.02); }
+    ::-webkit-scrollbar { width: 10px; height: 10px; }
+    ::-webkit-scrollbar-thumb { background: #2a3440; border-radius: 999px; }
+
+    .app {
+      min-height: 100vh;
+      display: grid;
+      grid-template-rows: auto 1fr;
+      background: radial-gradient(circle at top right, rgba(127,211,154,0.08), transparent 28%), var(--bg);
+    }
+    .topbar {
+      display: flex;
+      flex-wrap: wrap;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px 18px;
+      padding: 16px 20px;
+      border-bottom: 1px solid var(--line);
+      background: rgba(10,14,19,0.9);
+      backdrop-filter: blur(10px);
+      position: sticky;
+      top: 0;
+      z-index: 20;
+    }
+    .brand {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      min-width: 220px;
+    }
+    .brand-badge {
+      width: 34px;
+      height: 34px;
+      border-radius: 10px;
+      display: grid;
+      place-items: center;
+      background: rgba(127,211,154,0.12);
+      color: var(--green);
+      border: 1px solid rgba(127,211,154,0.22);
+      font-size: 17px;
+    }
+    .brand-text {
+      font-family: Oswald, Arial Narrow, sans-serif;
+      letter-spacing: .06em;
+      font-size: 24px;
+      line-height: 1;
+    }
+    .topbar-right {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 12px;
+      align-items: flex-end;
+    }
+    .selector-group {
+      display: flex;
+      align-items: end;
+      gap: 8px;
+      background: var(--panel);
+      border: 1px solid var(--line);
+      border-radius: 12px;
+      padding: 10px;
+    }
+    .selector-stack {
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+      min-width: 180px;
+    }
+    .selector-label { font-size: 11px; color: var(--muted); text-transform: uppercase; letter-spacing: .06em; }
+    .shell {
+      min-height: 0;
+      display: grid;
+      grid-template-columns: 250px minmax(0, 1fr);
+      align-items: start;
+    }
+    .sidenav {
+      border-right: 1px solid var(--line);
+      padding: 18px 14px;
+      background: rgba(14,19,24,0.82);
+      position: sticky;
+      top: var(--topbar-h, 74px);
+      align-self: start;
+      max-height: calc(100vh - var(--topbar-h, 74px));
+      overflow-y: auto;
+    }
+    .nav-item {
+      width: 100%;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      padding: 12px 14px;
+      border-radius: 12px;
+      border: 1px solid transparent;
+      background: transparent;
+      color: var(--muted);
+      margin-bottom: 8px;
+      text-align: left;
+    }
+    .nav-item.active {
+      background: rgba(127,211,154,0.08);
+      border-color: rgba(127,211,154,0.18);
+      color: var(--text);
+    }
+    .nav-item .icon { width: 18px; text-align: center; }
+    .main {
+      padding: 20px;
+      min-width: 0;
+      align-self: start;
+    }
+    .panel {
+      background: linear-gradient(180deg, rgba(255,255,255,0.02), rgba(255,255,255,0.01));
+      border: 1px solid var(--line);
+      border-radius: 18px;
+      box-shadow: var(--shadow);
+      overflow: hidden;
+    }
+    .panel-body { padding: 18px; }
+    .tab-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 12px;
+      margin-bottom: 16px;
+      flex-wrap: wrap;
+    }
+    .tab-title {
+      margin: 0;
+      font-family: Oswald, Arial Narrow, sans-serif;
+      font-size: 28px;
+      letter-spacing: .03em;
+      font-weight: 600;
+    }
+    .toolbar { display: flex; gap: 8px; flex-wrap: wrap; }
+    .table-wrap { overflow: auto; border: 1px solid var(--line); border-radius: 14px; background: var(--panel); }
+    .import-table { width: 100%; min-width: 760px; table-layout: auto; }
+    .squad-table { table-layout: fixed; min-width: 760px; }
+    .squad-table th, .squad-table td { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+    .squad-table td:first-child, .squad-table th:first-child { white-space: normal; }
+    .import-table th, .import-table td { white-space: nowrap; }
+    .import-table .import-name { min-width: 170px; }
+    .import-table .import-pos { min-width: 170px; }
+    .import-table .import-age,
+    .import-table .import-ca,
+    .import-table .import-pa,
+    .import-table .import-value {
+      min-width: 76px;
+      width: 76px;
+      text-align: right;
+      font-variant-numeric: tabular-nums;
+      padding-right: 10px;
+    }
+    .import-table .import-match, .import-table select.import-match { min-width: 220px; }
+    .empty {
+      display: grid;
+      place-items: center;
+      min-height: 220px;
+      border: 1px dashed var(--line);
+      border-radius: 16px;
+      color: var(--muted);
+      text-align: center;
+      padding: 24px;
+      background: rgba(255,255,255,0.015);
+    }
+    .pill, .type-tag {
+      display: inline-flex;
+      align-items: center;
+      min-height: 26px;
+      padding: 4px 9px;
+      border-radius: 999px;
+      font-size: 11.5px;
+      border: 1px solid var(--line);
+      background: var(--chip);
+      white-space: nowrap;
+    }
+    .type-tag.real { color: var(--green); border-color: rgba(127,211,154,0.24); background: rgba(127,211,154,0.12); }
+    .type-tag.fictional { color: #d4a356; border-color: rgba(212,163,86,0.24); background: rgba(212,163,86,0.12); }
+    .cmp { display: inline-flex; align-items: center; gap: 5px; font-weight: 600; }
+    .cmp.up { color: var(--green); }
+    .cmp.down { color: var(--red); }
+    .cmp.same { color: var(--amber); }
+    .cmp.new { color: #ccd2d8; }
+    .btn, .icon-btn, .select, .input, .textarea {
+      border-radius: 10px;
+      border: 1px solid var(--line);
+      background: var(--panel-2);
+      color: var(--text);
+    }
+    .btn {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      padding: 10px 14px;
+      font-weight: 600;
+    }
+    .btn:hover, .icon-btn:hover { filter: brightness(1.08); }
+    .btn-primary { background: rgba(127,211,154,0.13); border-color: rgba(127,211,154,0.3); color: var(--green); }
+    .btn-danger { background: rgba(224,138,132,0.12); border-color: rgba(224,138,132,0.28); color: var(--red); }
+    .btn-ghost { background: var(--panel-2); color: var(--text); }
+    .icon-btn {
+      width: 38px;
+      height: 38px;
+      display: inline-grid;
+      place-items: center;
+      padding: 0;
+    }
+    .select, .input, .textarea {
+      width: 100%;
+      padding: 10px 12px;
+      outline: none;
+    }
+    .textarea { min-height: 90px; resize: vertical; }
+    .select:focus, .input:focus, .textarea:focus, .btn:focus, .icon-btn:focus, .nav-item:focus {
+      outline: 2px solid rgba(127,211,154,0.45);
+      outline-offset: 2px;
+    }
+    .summary-grid {
+      display: grid;
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+      gap: 12px;
+      margin-bottom: 16px;
+    }
+    .summary-card {
+      border: 1px solid var(--line);
+      border-radius: 14px;
+      background: var(--panel);
+      padding: 14px;
+    }
+    .summary-card h3 {
+      margin: 0 0 10px;
+      font-size: 13px;
+      text-transform: uppercase;
+      letter-spacing: .05em;
+    }
+    .summary-card ul { margin: 0; padding-left: 18px; color: var(--muted); }
+    .summary-card li { margin-bottom: 6px; }
+
+    .kanban {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+      gap: 12px;
+    }
+    .kanban-col {
+      border: 1px solid var(--line);
+      border-radius: 14px;
+      background: var(--panel);
+      min-height: 220px;
+      display: flex;
+      flex-direction: column;
+    }
+    .kanban-head {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 8px;
+      padding: 12px 14px;
+      border-bottom: 1px solid var(--line);
+      font-size: 12px;
+      color: var(--muted);
+      text-transform: uppercase;
+      letter-spacing: .05em;
+    }
+    .kanban-count {
+      min-width: 24px;
+      height: 24px;
+      display: inline-grid;
+      place-items: center;
+      border-radius: 999px;
+      background: rgba(255,255,255,0.06);
+      color: var(--text);
+      font-size: 11px;
+    }
+    .kanban-body { padding: 12px; display: flex; flex-direction: column; gap: 10px; }
+    .kanban-card {
+      border: 1px solid var(--line);
+      border-radius: 12px;
+      background: var(--panel-2);
+      padding: 12px;
+    }
+    .muted { color: var(--muted); }
+    .faint { color: var(--faint); }
+
+    .pitch-wrap {
+      border: 1px solid var(--line);
+      border-radius: 18px;
+      background: linear-gradient(180deg, #0f2816, #0d2012);
+      padding: 18px;
+      overflow: auto;
+    }
+    .pitch {
+      position: relative;
+      width: 100%;
+      min-width: 720px;
+      aspect-ratio: 0.68;
+      border-radius: 18px;
+      border: 2px solid rgba(255,255,255,0.18);
+      background:
+        radial-gradient(circle at center, rgba(255,255,255,0.04), transparent 16%),
+        linear-gradient(180deg, rgba(255,255,255,0.03), rgba(255,255,255,0.01)),
+        repeating-linear-gradient(180deg, rgba(255,255,255,0.025) 0 9%, rgba(0,0,0,0.02) 9% 18%);
+      margin: 0 auto;
+      overflow: hidden;
+    }
+    .pitch-slot {
+      position: absolute;
+      transform: translate(-50%, -50%);
+      width: 124px;
+      text-align: center;
+    }
+    .pitch-token {
+      width: 58px;
+      height: 58px;
+      margin: 0 auto 8px;
+      border-radius: 50%;
+      border: 2px dashed rgba(255,255,255,0.22);
+      display: grid;
+      place-items: center;
+      background: rgba(0,0,0,0.14);
+      color: rgba(255,255,255,0.85);
+      font-weight: 700;
+    }
+    .pitch-token.filled {
+      border-style: solid;
+      border-color: rgba(127,211,154,0.45);
+      background: rgba(127,211,154,0.14);
+      color: var(--green);
+    }
+    .pitch-slot button.clear-slot {
+      margin-top: 6px;
+      padding: 4px 8px;
+      font-size: 11px;
+      border-radius: 999px;
+      border: 1px solid rgba(224,138,132,0.25);
+      background: rgba(224,138,132,0.1);
+      color: var(--red);
+    }
+    .pitch-label { font-size: 11px; color: rgba(255,255,255,0.85); }
+    .pitch-name { font-size: 11px; color: rgba(255,255,255,0.98); font-weight: 600; }
+
+    .modal-overlay {
+      position: fixed;
+      inset: 0;
+      background: rgba(4,8,12,0.76);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 18px;
+      z-index: 100;
+    }
+    .modal {
+      width: min(760px, 100%);
+      max-height: min(90vh, 920px);
+      overflow: auto;
+      background: #10161d;
+      border: 1px solid var(--line);
+      border-radius: 18px;
+      box-shadow: var(--shadow);
+    }
+    .modal-head {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+      padding: 16px 18px;
+      border-bottom: 1px solid var(--line);
+      position: sticky;
+      top: 0;
+      background: #10161d;
+      z-index: 2;
+    }
+    .modal-title { margin: 0; font-size: 20px; font-family: Oswald, Arial Narrow, sans-serif; letter-spacing: .03em; }
+    .modal-body { padding: 18px; }
+    .modal-footer {
+      display: flex;
+      justify-content: flex-end;
+      gap: 10px;
+      margin-top: 18px;
+      flex-wrap: wrap;
+    }
+    .form-grid {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 14px;
+    }
+    .field-wide { grid-column: 1 / -1; }
+    .field label {
+      display: block;
+      margin-bottom: 6px;
+      font-size: 12px;
+      color: var(--muted);
+      text-transform: uppercase;
+      letter-spacing: .05em;
+    }
+    .chip-row {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+    }
+    .chip-btn {
+      padding: 8px 10px;
+      border-radius: 999px;
+      border: 1px solid var(--line);
+      background: var(--panel-2);
+      color: var(--muted);
+    }
+    .chip-btn.active {
+      color: var(--green);
+      background: rgba(127,211,154,0.12);
+      border-color: rgba(127,211,154,0.28);
+    }
+    .preset-list {
+      margin: 12px 0 0;
+      padding-left: 18px;
+      color: var(--muted);
+      font-size: 13px;
+      max-height: 240px;
+      overflow: auto;
+    }
+    .formation-btn {
+      width: 100%;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 12px;
+      padding: 12px 14px;
+      border-radius: 12px;
+      border: 1px solid var(--line);
+      background: var(--panel-2);
+      color: var(--text);
+      margin-bottom: 8px;
+      text-align: left;
+    }
+    .custom-slot-grid { display: flex; flex-direction: column; gap: 8px; margin-top: 10px; }
+    .custom-slot-row { display: grid; grid-template-columns: 26px 1fr 160px; gap: 8px; align-items: center; }
+    .picker-list { display: flex; flex-direction: column; gap: 8px; }
+    .picker-label { margin: 12px 0 8px; font-size: 12px; color: var(--muted); text-transform: uppercase; letter-spacing: .05em; }
+    .picker-row {
+      width: 100%;
+      display: flex;
+      justify-content: space-between;
+      gap: 8px;
+      padding: 10px 12px;
+      border-radius: 12px;
+      border: 1px solid var(--line);
+      background: var(--panel-2);
+      color: var(--text);
+      text-align: left;
+    }
+    .toast {
+      position: fixed;
+      right: 18px;
+      bottom: 18px;
+      z-index: 120;
+      max-width: min(420px, calc(100vw - 36px));
+      border: 1px solid var(--green-2);
+      background: rgba(17,22,29,0.96);
+      color: var(--text);
+      border-radius: 14px;
+      padding: 12px 14px;
+      box-shadow: var(--shadow);
+    }
+    .hidden { display: none !important; }
+
+
+    .inline-cell-btn {
+      width: 100%;
+      text-align: left;
+      border: 1px dashed transparent;
+      background: transparent;
+      color: inherit;
+      padding: 6px 8px;
+      border-radius: 8px;
+      min-height: 32px;
+    }
+    .inline-cell-btn:hover { border-color: var(--line); background: rgba(255,255,255,0.03); }
+    .inline-number { font-variant-numeric: tabular-nums; }
+    .campo-tabs {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 12px;
+      margin-bottom: 14px;
+    }
+    .campo-tab {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 10px;
+      padding: 14px 18px;
+      border-radius: 14px;
+      border: 1px solid var(--line);
+      background: var(--panel-2);
+      color: var(--muted);
+      text-align: left;
+      transition: border-color .15s ease, background .15s ease, color .15s ease;
+    }
+    .campo-tab-title { font-family: Oswald, Arial Narrow, sans-serif; font-size: 16px; letter-spacing: .04em; }
+    .campo-tab-count { font-size: 12px; font-variant-numeric: tabular-nums; color: var(--faint); }
+    .campo-tab.team-main.active { border-color: rgba(140,32,188,0.65); background: rgba(140,32,188,0.16); color: #f3e8ff; }
+    .campo-tab.team-main.active .campo-tab-count { color: #e6c9ff; }
+    .campo-tab.team-reserve.active { border-color: rgba(10,90,190,0.65); background: rgba(10,90,190,0.16); color: #d9eaff; }
+    .campo-tab.team-reserve.active .campo-tab-count { color: #bfdcff; }
+    .campo-tab:not(.active):hover { border-color: rgba(255,255,255,0.22); color: var(--text); }
+    .pitch {
+      position: relative;
+      aspect-ratio: 1.62;
+      width: 100%;
+      max-width: 980px;
+      min-width: 0;
+      border-radius: 16px;
+      background: linear-gradient(180deg, #123a1e, #0e2c17);
+      overflow: hidden;
+      border: 1px solid rgba(255,255,255,0.18);
+      margin: 0 auto;
+    }
+    .pitch::before,
+    .pitch::after {
+      content: "";
+      position: absolute;
+      inset: 0;
+      pointer-events: none;
+    }
+    .pitch::before {
+      border-left: 2px solid rgba(255,255,255,0.82);
+      border-right: 2px solid rgba(255,255,255,0.82);
+      border-top: 2px solid rgba(255,255,255,0.82);
+      border-bottom: 2px solid rgba(255,255,255,0.82);
+      border-radius: 16px;
+    }
+    .pitch::after {
+      background:
+        linear-gradient(90deg, transparent 49.85%, rgba(255,255,255,0.82) 49.85%, rgba(255,255,255,0.82) 50.15%, transparent 50.15%),
+        radial-gradient(circle at 50% 50%, transparent 0 7.7%, rgba(255,255,255,0.82) 7.8% 8.05%, transparent 8.15%),
+        linear-gradient(90deg, rgba(255,255,255,0.82), rgba(255,255,255,0.82)),
+        linear-gradient(90deg, rgba(255,255,255,0.82), rgba(255,255,255,0.82)),
+        linear-gradient(90deg, rgba(255,255,255,0.82), rgba(255,255,255,0.82)),
+        linear-gradient(90deg, rgba(255,255,255,0.82), rgba(255,255,255,0.82));
+      background-size: 
+        100% 100%,
+        100% 100%,
+        15% 0.45%,
+        15% 0.45%,
+        15% 0.45%,
+        15% 0.45%;
+      background-position:
+        center,
+        center,
+        0 18%,
+        0 82%,
+        100% 18%,
+        100% 82%;
+      background-repeat: no-repeat;
+    }
+    .pitch-box,
+    .pitch-six,
+    .pitch-spot,
+    .pitch-arc {
+      position: absolute;
+      pointer-events: none;
+      border-color: rgba(255,255,255,0.82);
+    }
+    .pitch-box.left { left: 0; top: 20%; width: 16%; height: 60%; border: 2px solid rgba(255,255,255,0.82); border-left: 0; }
+    .pitch-box.right { right: 0; top: 20%; width: 16%; height: 60%; border: 2px solid rgba(255,255,255,0.82); border-right: 0; }
+    .pitch-six.left { left: 0; top: 36%; width: 5.5%; height: 28%; border: 2px solid rgba(255,255,255,0.82); border-left: 0; }
+    .pitch-six.right { right: 0; top: 36%; width: 5.5%; height: 28%; border: 2px solid rgba(255,255,255,0.82); border-right: 0; }
+    .pitch-spot.left, .pitch-spot.right { width: 6px; height: 6px; border-radius: 50%; background: rgba(255,255,255,0.92); top: 50%; transform: translateY(-50%); }
+    .pitch-spot.left { left: 11%; }
+    .pitch-spot.right { right: 11%; }
+    .pitch-arc.left, .pitch-arc.right {
+      width: 9%; height: 24%; top: 38%; border: 2px solid rgba(255,255,255,0.82); border-radius: 50%;
+    }
+    .pitch-arc.left { left: 11.2%; clip-path: inset(0 0 0 48%); }
+    .pitch-arc.right { right: 11.2%; clip-path: inset(0 48% 0 0); }
+    .pitch-slot {
+      width: 176px;
+      transform: translate(-50%, -50%);
+    }
+    .pitch-token {
+      width: 176px;
+      min-height: 48px;
+      height: auto;
+      border-radius: 12px;
+      padding: 0;
+      border: 1px dashed rgba(255,255,255,0.25);
+      background: rgba(0,0,0,0.14);
+      overflow: hidden;
+    }
+    .pitch-token.filled {
+      border-style: solid;
+    }
+    .pitch-token.filled.team-main {
+      border-color: rgba(140,32,188,0.55);
+      background: linear-gradient(160deg, rgba(140,32,188,0.62), rgba(90,18,132,0.78));
+    }
+    .pitch-token.filled.team-reserve {
+      border-color: rgba(10,90,190,0.55);
+      background: linear-gradient(160deg, rgba(10,90,190,0.62), rgba(8,58,136,0.78));
+    }
+    .pitch-token-inner {
+      display:flex;
+      flex-direction:column;
+      width:100%;
+      color: inherit;
+      font-size: 10.5px;
+      line-height: 1.25;
+      text-align:left;
+    }
+    .pitch-row {
+      display:flex;
+      justify-content:space-between;
+      gap:6px;
+      align-items:center;
+      padding: 4px 8px;
+      font-weight: 600;
+      font-size: 10px;
+      color: #f5f2fb;
+      text-shadow: 0 1px 2px rgba(0,0,0,0.6);
+    }
+    .pitch-row span { white-space: nowrap; }
+    .pitch-row + .pitch-row {
+      border-top: 1px solid rgba(255,255,255,0.14);
+      font-weight: 600;
+      color: rgba(255,255,255,0.94);
+      font-size: 9.5px;
+    }
+    .pitch-line-name { overflow:hidden; text-overflow:ellipsis; white-space:nowrap; max-width: 80px; flex-shrink: 1; }
+    .pitch-line-rating { font-variant-numeric: tabular-nums; letter-spacing: .02em; flex-shrink: 0; }
+    .pitch-empty { font-size: 22px; line-height: 1; width:100%; text-align:center; padding: 10px 0; }
+    .pitch-label {
+      margin-top: 5px;
+      font-size: 11px;
+      color: rgba(255,255,255,0.9);
+      font-weight: 700;
+      text-shadow: 0 1px 2px rgba(0,0,0,0.4);
+    }
+    @media (max-width: 1200px) {
+      .pitch-wrap { overflow: auto; }
+    }
+
+    @media (max-width: 980px) {
+      .shell { grid-template-columns: 1fr; }
+      .sidenav {
+        border-right: 0;
+        border-bottom: 1px solid var(--line);
+        display: grid;
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+        gap: 8px;
+      }
+      .nav-item { margin-bottom: 0; }
+      .summary-grid { grid-template-columns: 1fr; }
+    }
+
+    @media (max-width: 720px) {
+      .topbar { padding: 14px; }
+      .main { padding: 14px; }
+      .panel-body { padding: 14px; }
+      .selector-group, .topbar-right { width: 100%; }
+      .selector-stack { min-width: 0; flex: 1; }
+      .sidenav { grid-template-columns: 1fr; }
+      .form-grid { grid-template-columns: 1fr; }
+      .custom-slot-row { grid-template-columns: 20px 1fr; }
+      .custom-slot-row select { grid-column: 1 / -1; }
+      .tab-header { align-items: stretch; }
+      .toolbar { width: 100%; }
+      .toolbar > * { flex: 1 1 calc(50% - 8px); }
+      .toolbar .btn, .toolbar .select { width: 100%; justify-content: center; }
+    }
+  </style>
+</head>
+<body>
+  <div class="app" id="app"></div>
+  <div id="modal-root"></div>
+  <div id="toast-root"></div>
+
+  <script>
+    const POSITION_CATEGORIES = {
+      GR:  { label: "Guarda redes", row: 90 },
+      DC:  { label: "Defesa Central", row: 74 },
+      DD:  { label: "Defesa Direito", row: 64 },
+      DE:  { label: "Defesa Esquerdo", row: 64 },
+      MDC: { label: "Medio Defensivo", row: 54 },
+      MC:  { label: "Medio Centro", row: 44 },
+      ED:  { label: "Extremo Direito", row: 28 },
+      EE:  { label: "Extremo Esquerdo", row: 28 },
+      PL:  { label: "Ponta de Lanca", row: 12 }
+    };
+    const CATEGORY_KEYS = Object.keys(POSITION_CATEGORIES);
+    const SQUAD_STATUSES = ["Fica", "Vender", "Emprestar", "Vendido", "Emprestado", "Por Decidir"];
+    const SQUAD_STATUSES_CL = ["Inscrito", "Não Inscrito"];
+    const SEASON_ROLES = ["Titular", "Suplente", "Restantes"];
+    const SCOUT_REGIONS = ["África", "Ásia", "Europa Ocidental", "Europa Central", "América do Sul", "América do Norte", "Oceânia", "Outra"];
+    const FORMATIONS = {
+      "4-4-2": { name: "4-4-2", slots: [slot("Guarda-redes","GR",6,50),slot("Defesa central direito","DC",22,40),slot("Defesa central esquerdo","DC",22,60),slot("Defesa direito","DD",18,82),slot("Defesa esquerdo","DE",18,18),slot("Extremo direito","ED",72,84),slot("Extremo esquerdo","EE",72,16),slot("Medio centro direito","MC",40,60),slot("Medio centro esquerdo","MC",40,40),slot("Ponta de lanca direito","PL",86,58),slot("Ponta de lanca esquerdo","PL",86,42)] },
+      "4-3-3": { name: "4-3-3", slots: [slot("Guarda-redes","GR",6,50),slot("Defesa central direito","DC",22,40),slot("Defesa central esquerdo","DC",22,60),slot("Defesa direito","DD",18,82),slot("Defesa esquerdo","DE",18,18),slot("Medio defensivo","MDC",34,50),slot("Medio centro direito","MC",46,60),slot("Medio centro esquerdo","MC",46,40),slot("Extremo direito","ED",72,84),slot("Extremo esquerdo","EE",72,16),slot("Ponta de lanca","PL",88,50)] },
+      "3-4-3": { name: "3-4-3", slots: [slot("Guarda-redes","GR",6,50),slot("Defesa central direito","DC",18,34),slot("Defesa central","DC",18,50),slot("Defesa central esquerdo","DC",18,66),slot("Extremo direito","ED",46,84),slot("Extremo esquerdo","EE",46,16),slot("Medio defensivo","MDC",42,50),slot("Medio centro","MC",54,50),slot("Extremo direito alto","ED",74,82),slot("Extremo esquerdo alto","EE",74,18),slot("Ponta de lanca","PL",88,50)] },
+      "3-5-2": { name: "3-5-2", slots: [slot("Guarda-redes","GR",6,50),slot("Defesa central direito","DC",18,34),slot("Defesa central","DC",18,50),slot("Defesa central esquerdo","DC",18,66),slot("Extremo direito","ED",48,84),slot("Extremo esquerdo","EE",48,16),slot("Medio defensivo","MDC",36,50),slot("Medio centro direito","MC",54,62),slot("Medio centro esquerdo","MC",54,38),slot("Ponta de lanca direito","PL",88,58),slot("Ponta de lanca esquerdo","PL",88,42)] },
+      "4-2-3-1": { name: "4-2-3-1", slots: [slot("Guarda-redes","GR",6,50),slot("Defesa central direito","DC",22,40),slot("Defesa central esquerdo","DC",22,60),slot("Defesa direito","DD",18,82),slot("Defesa esquerdo","DE",18,18),slot("Medio defensivo direito","MDC",36,58),slot("Medio defensivo esquerdo","MDC",36,42),slot("Medio centro ofensivo","MC",56,50),slot("Extremo direito","ED",70,84),slot("Extremo esquerdo","EE",70,16),slot("Ponta de lanca","PL",88,50)] },
+      "5-3-2": { name: "5-3-2", slots: [slot("Guarda-redes","GR",6,50),slot("Defesa central direito","DC",20,34),slot("Defesa central","DC",18,50),slot("Defesa central esquerdo","DC",20,66),slot("Defesa direito","DD",22,84),slot("Defesa esquerdo","DE",22,16),slot("Medio centro direito","MC",50,62),slot("Medio centro","MC",42,50),slot("Medio centro esquerdo","MC",50,38),slot("Ponta de lanca direito","PL",88,58),slot("Ponta de lanca esquerdo","PL",88,42)] }
+    };
+
+    function slot(label, category, x, y) { return { label, category, x, y }; }
+    function uid() { return Math.random().toString(36).slice(2, 10) + Date.now().toString(36).slice(-4); }
+
+    function clampRating(value) {
+      const n = Number(value);
+      if (!Number.isFinite(n)) return 0;
+      return Math.max(0, Math.min(5, Math.round(n * 2) / 2));
+    }
+    function clampMoney(value) {
+      const n = Number(value);
+      return Number.isFinite(n) ? Math.max(0, n) : 0;
+    }
+    function normalizeLegacyValue(field, value) {
+      if (field === 'squadStatus') {
+        const map = {
+          'Lista de transferências': 'Vender',
+          'Empréstimo': 'Emprestar',
+          'Posso emprestar': 'Emprestar',
+          'Posso vender': 'Vender',
+          'Comprar': 'Por Decidir',
+          'Não queria': 'Por Decidir'
+        };
+        return map[value] || (SQUAD_STATUSES.includes(value) ? value : 'Por Decidir');
+      }
+      if (field === 'seasonRole') {
+        const map = { 'Prodígio': 'Restantes', 'Equipa A': 'Suplente', 'Equipa B': 'Restantes', 'Sub-19': 'Restantes', 'Não queria': 'Restantes', 'Potencial': 'Restantes' };
+        return map[value] || (SEASON_ROLES.includes(value) ? value : 'Restantes');
+      }
+      return value;
+    }
+
+    function readKey(key, fallback) { try { const raw = window.localStorage ? localStorage.getItem(key) : null; return raw ? JSON.parse(raw) : fallback; } catch { return fallback; } }
+    function writeKey(key, value) { try { if (window.localStorage) localStorage.setItem(key, JSON.stringify(value)); } catch {} }
+    function esc(str) { return String(str ?? "").replace(/[&<>\"]/g, m => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[m])); }
+    function initials(name) { return (name || '?').split(' ').filter(Boolean).slice(0,2).map(p => p[0]).join('').toUpperCase(); }
+    function icon(name) {
+      const map = {
+        shield:'🛡', users:'👥', field:'🧩', compare:'⇄', board:'📋', star:'★', plus:'＋', edit:'✎', trash:'🗑', close:'✕', up:'↑', down:'↓', same:'—', spark:'✦', scout:'🔎'
+      };
+      return map[name] || '•';
+    }
+
+    const state = {
+      loaded: false,
+      seasons: [],
+      players: [],
+      scouts: [],
+      recruits: [],
+      statsBySeason: {},
+      tacticsBySeason: {},
+      currentSeasonId: null,
+      currentTacticId: null,
+      tab: 'plantel',
+      filterPos: '',
+      filterStatus: '',
+      filterRegion: '',
+      filterRecruitPos: '',
+      campoView: 'main',
+      playerModal: null,
+      scoutModal: null,
+      recruitModal: null,
+      deleteModal: null,
+      seasonModal: false,
+      tacticModal: null,
+      confirmModal: null,
+      slotPicker: null,
+      remainingModal: false,
+      comparisonPhotoModal: null,
+      importModal: null,
+      toast: null,
+      toastTimer: null,
+      comparisonProfiles: [],
+      comparisonActiveProfileId: null,
+      comparisonSession: { playerAId: null, playerBId: null, values: {} }
+    };
+
+    function migratePlayerPosition(code) {
+      const map = { LD: 'DD', LE: 'DE', MD: 'ED', ME: 'EE', EID: 'ED', EIE: 'EE', SA: 'PL', MOC: 'MC' };
+      return POSITION_CATEGORIES[code] ? code : (map[code] || 'DC');
+    }
+    function migrateSlotCategory(code) {
+      return migratePlayerPosition(code);
+    }
+    function ensureTacticCompatibility(tactic) {
+      const assignments = tactic.assignments || {};
+      const reserveAssignments = tactic.reserveAssignments || {};
+      const slots = (tactic.slots || []).map((s, idx) => {
+        const x = Number.isFinite(Number(s.x)) ? Number(s.x) : inferSlotCoords(tactic.formationKey, idx, s).x;
+        const y = Number.isFinite(Number(s.y)) ? Number(s.y) : inferSlotCoords(tactic.formationKey, idx, s).y;
+        return { ...s, category: migrateSlotCategory(s.category), x, y };
+      });
+      return { ...tactic, slots, assignments, reserveAssignments };
+    }
+    function inferSlotCoords(formationKey, idx, slotObj) {
+      const preset = FORMATIONS[formationKey];
+      if (preset && preset.slots[idx]) return { x: preset.slots[idx].x, y: preset.slots[idx].y };
+      const fallback = [
+        {x:8,y:50},{x:24,y:67},{x:22,y:50},{x:24,y:33},{x:28,y:86},{x:28,y:14},{x:46,y:50},{x:56,y:62},{x:56,y:38},{x:82,y:58},{x:82,y:42}
+      ];
+      return fallback[idx] || { x: 10 + idx * 7, y: 50 };
+    }
+    function loadState() {
+      const core = readKey('fm-core', null);
+      const stats = readKey('fm-season-stats', {});
+      const tactics = readKey('fm-tactics', {});
+      if (core && Array.isArray(core.seasons) && core.seasons.length) {
+        state.seasons = core.seasons;
+        state.players = Array.isArray(core.players) ? core.players.map(p => ({ ...p, mainPosition: migratePlayerPosition(p.mainPosition), secondaryPositions: (p.secondaryPositions || []).map(migratePlayerPosition).filter((v,i,a)=>a.indexOf(v)===i && v !== migratePlayerPosition(p.mainPosition)) })) : [];
+        state.currentSeasonId = core.seasons[core.seasons.length - 1].id;
+      } else {
+        const s0 = { id: uid(), label: '25-26', previousSeasonId: null, clMode: false };
+        state.seasons = [s0];
+        state.players = [];
+        state.currentSeasonId = s0.id;
+      }
+      state.statsBySeason = stats || {};
+      state.tacticsBySeason = Object.fromEntries(Object.entries(tactics || {}).map(([sid, list]) => [sid, (list || []).map(ensureTacticCompatibility)]));
+      state.loaded = true;
+      ensureCurrentTactic();
+      Object.keys(state.statsBySeason).forEach(sid => {
+        Object.keys(state.statsBySeason[sid] || {}).forEach(pid => {
+          const s = state.statsBySeason[sid][pid] || {};
+          s.ca = clampRating(s.ca);
+          s.pa = clampRating(s.pa);
+          s.value = clampMoney(s.value);
+          s.squadStatus = normalizeLegacyValue('squadStatus', s.squadStatus);
+          s.seasonRole = normalizeLegacyValue('seasonRole', s.seasonRole);
+          state.statsBySeason[sid][pid] = s;
+        });
+      });
+      loadComparisonState();
+      loadScoutsState();
+      loadRecruitsState();
+      persistAll();
+    }
+
+    function persistAll() {
+      writeKey('fm-core', { seasons: state.seasons, players: state.players });
+      writeKey('fm-season-stats', state.statsBySeason);
+      writeKey('fm-tactics', Object.fromEntries(Object.entries(state.tacticsBySeason).map(([sid, list]) => [sid, (list || []).map(ensureTacticCompatibility)])));
+    }
+
+    function loadScoutsState() {
+      const raw = readKey('fm-scouts', []);
+      state.scouts = Array.isArray(raw) ? raw.map(s => ({ id: s.id || uid(), name: s.name || '', region: SCOUT_REGIONS.includes(s.region) ? s.region : SCOUT_REGIONS[0], notes: s.notes || '' })) : [];
+    }
+
+    function persistScouts() {
+      writeKey('fm-scouts', state.scouts);
+    }
+
+    function loadRecruitsState() {
+      const raw = readKey('fm-recruits', []);
+      state.recruits = Array.isArray(raw) ? raw.map(r => ({
+        id: r.id || uid(),
+        name: r.name || '',
+        mainPosition: CATEGORY_KEYS.includes(r.mainPosition) ? r.mainPosition : CATEGORY_KEYS[0],
+        age: r.age === undefined || r.age === null || r.age === '' ? '' : Number(r.age),
+        ca: r.ca === undefined || r.ca === null || r.ca === '' ? '' : Number(r.ca),
+        pa: r.pa === undefined || r.pa === null || r.pa === '' ? '' : Number(r.pa),
+        value: r.value === undefined || r.value === null || r.value === '' ? '' : Number(r.value),
+        rh: r.rh === undefined || r.rh === null || r.rh === '' ? undefined : Number(r.rh),
+        notes: r.notes || ''
+      })) : [];
+    }
+
+    function persistRecruits() {
+      writeKey('fm-recruits', state.recruits);
+    }
+
+    function loadComparisonState() {
+      const raw = readKey('fm-comparison', null);
+      if (raw && Array.isArray(raw.profiles) && raw.profiles.length) {
+        state.comparisonProfiles = raw.profiles.map(p => ({ id: p.id, name: p.name, attributes: Array.isArray(p.attributes) ? p.attributes.map(a => ({ id: a.id, label: a.label || '', multiplier: Number.isFinite(Number(a.multiplier)) ? Number(a.multiplier) : 1 })) : [] }));
+        state.comparisonActiveProfileId = raw.activeProfileId && state.comparisonProfiles.find(p => p.id === raw.activeProfileId) ? raw.activeProfileId : state.comparisonProfiles[0].id;
+        const migratedValues = {};
+        Object.entries((raw.session && raw.session.values) || {}).forEach(([attrId, v]) => {
+          if (v && typeof v === 'object') {
+            migratedValues[attrId] = { a: v.a === undefined || v.a === '' ? '' : Number(v.a), b: v.b === undefined || v.b === '' ? '' : Number(v.b) };
+          } else if (v !== undefined && v !== null && v !== '' && Number(v) !== 0) {
+            const n = Number(v);
+            migratedValues[attrId] = n >= 0 ? { a: n, b: '' } : { a: '', b: Math.abs(n) };
+          } else {
+            migratedValues[attrId] = { a: '', b: '' };
+          }
+        });
+        state.comparisonSession = { values: migratedValues };
+      } else {
+        state.comparisonProfiles = ['Guarda-redes', 'Defesas', 'Médios', 'Extremos', 'Avançados'].map(name => ({ id: uid(), name, attributes: [] }));
+        state.comparisonActiveProfileId = state.comparisonProfiles[0].id;
+        state.comparisonSession = { values: {} };
+      }
+    }
+
+    function persistComparison() {
+      writeKey('fm-comparison', { profiles: state.comparisonProfiles, activeProfileId: state.comparisonActiveProfileId, session: state.comparisonSession });
+    }
+
+    function comparisonActiveProfile() {
+      return state.comparisonProfiles.find(p => p.id === state.comparisonActiveProfileId) || state.comparisonProfiles[0];
+    }
+
+    function switchComparisonProfile(profileId) {
+      if (!state.comparisonProfiles.find(p => p.id === profileId)) return;
+      state.comparisonActiveProfileId = profileId;
+      state.comparisonSession = { values: {} };
+      persistComparison();
+      render();
+    }
+
+    function createComparisonProfile() {
+      const input = document.getElementById('cv-new-profile-name');
+      const name = input ? input.value.trim() : '';
+      if (!name) { showToast('Escreve um nome para o novo perfil.', 'warn'); return; }
+      const profile = { id: uid(), name, attributes: [] };
+      state.comparisonProfiles.push(profile);
+      state.comparisonActiveProfileId = profile.id;
+      state.comparisonSession = { values: {} };
+      persistComparison();
+      render();
+      showToast(`Perfil "${name}" criado.`);
+    }
+
+    function deleteComparisonProfile() {
+      if (state.comparisonProfiles.length <= 1) { showToast('Tem de existir pelo menos um perfil de comparação.'); return; }
+      const profile = comparisonActiveProfile();
+      state.confirmModal = {
+        title: 'Apagar perfil de comparação',
+        message: `Vais apagar o perfil <strong>${esc(profile.name)}</strong> e os atributos configurados nele. Esta ação não pode ser desfeita.`,
+        confirmLabel: 'Apagar perfil',
+        onConfirm: () => {
+          state.comparisonProfiles = state.comparisonProfiles.filter(p => p.id !== profile.id);
+          state.comparisonActiveProfileId = state.comparisonProfiles[0].id;
+          state.comparisonSession = { values: {} };
+          persistComparison();
+          showToast('Perfil de comparação apagado.');
+        }
+      };
+      renderModal();
+    }
+
+    function addComparisonAttribute() {
+      const profile = comparisonActiveProfile();
+      const attr = { id: uid(), label: '', multiplier: 1 };
+      profile.attributes.push(attr);
+      state.comparisonSession.values[attr.id] = { a: '', b: '' };
+      persistComparison();
+      render();
+      const labelInput = document.querySelector(`[data-cv-label="${attr.id}"]`);
+      if (labelInput) labelInput.focus();
+    }
+
+    function removeComparisonAttribute(attrId) {
+      const profile = comparisonActiveProfile();
+      profile.attributes = profile.attributes.filter(a => a.id !== attrId);
+      delete state.comparisonSession.values[attrId];
+      persistComparison();
+      render();
+    }
+
+    function updateComparisonLabel(attrId, rawValue) {
+      const profile = comparisonActiveProfile();
+      const attr = profile.attributes.find(a => a.id === attrId);
+      if (!attr) return;
+      attr.label = rawValue;
+      persistComparison();
+    }
+
+    function updateComparisonValue(attrId, side, rawValue) {
+      if (!state.comparisonSession.values[attrId]) state.comparisonSession.values[attrId] = { a: '', b: '' };
+      state.comparisonSession.values[attrId][side] = rawValue === '' ? '' : Number(rawValue);
+      persistComparison();
+      recomputeComparisonTotals();
+    }
+
+    function updateComparisonMultiplier(attrId, rawValue) {
+      const profile = comparisonActiveProfile();
+      const attr = profile.attributes.find(a => a.id === attrId);
+      if (!attr) return;
+      attr.multiplier = rawValue === '' ? 0 : Number(rawValue);
+      persistComparison();
+      recomputeComparisonTotals();
+    }
+
+    function comparisonRowTotal(attr) {
+      const v = state.comparisonSession.values[attr.id] || {};
+      const a = Number(v.a) || 0;
+      const b = Number(v.b) || 0;
+      const mult = Number(attr.multiplier);
+      return (a - b) * (Number.isFinite(mult) ? mult : 0);
+    }
+
+    function comparisonGrandTotal() {
+      const profile = comparisonActiveProfile();
+      return profile.attributes.reduce((sum, attr) => sum + comparisonRowTotal(attr), 0);
+    }
+
+    function comparisonTotalA(profile) {
+      const p = profile || comparisonActiveProfile();
+      const session = state.comparisonSession;
+      return p.attributes.reduce((sum, attr) => {
+        const v = session.values[attr.id] || {};
+        const a = Number(v.a) || 0;
+        const mult = Number(attr.multiplier);
+        return sum + a * (Number.isFinite(mult) ? mult : 0);
+      }, 0);
+    }
+
+    function comparisonTotalB(profile) {
+      const p = profile || comparisonActiveProfile();
+      const session = state.comparisonSession;
+      return p.attributes.reduce((sum, attr) => {
+        const v = session.values[attr.id] || {};
+        const b = Number(v.b) || 0;
+        const mult = Number(attr.multiplier);
+        return sum + b * (Number.isFinite(mult) ? mult : 0);
+      }, 0);
+    }
+
+    function recomputeComparisonTotals() {
+      const profile = comparisonActiveProfile();
+      profile.attributes.forEach(attr => {
+        const el = document.getElementById('cv-row-total-' + attr.id);
+        if (el) el.textContent = comparisonRowTotal(attr).toFixed(1);
+      });
+      const totalEl = document.getElementById('cv-total');
+      if (totalEl) totalEl.textContent = comparisonGrandTotal().toFixed(1);
+      const totalAEl = document.getElementById('cv-total-a');
+      if (totalAEl) totalAEl.textContent = comparisonTotalA(profile).toFixed(1);
+      const totalBEl = document.getElementById('cv-total-b');
+      if (totalBEl) totalBEl.textContent = comparisonTotalB(profile).toFixed(1);
+    }
+
+    function ensureCurrentTactic() {
+      const list = tacticsThisSeason();
+      if (list.length && !list.find(t => t.id === state.currentTacticId)) state.currentTacticId = list[0].id;
+      if (!list.length) state.currentTacticId = null;
+    }
+
+    function currentSeason() { return state.seasons.find(s => s.id === state.currentSeasonId) || null; }
+    function isCLMode() { const s = currentSeason(); return !!(s && s.clMode); }
+    function activeSquadStatuses() { return isCLMode() ? SQUAD_STATUSES_CL : SQUAD_STATUSES; }
+    function activeStatusField() { return isCLMode() ? 'clStatus' : 'squadStatus'; }
+    function activeStatusValue(s) { return isCLMode() ? (s?.clStatus || 'Não Inscrito') : (s?.squadStatus || 'Fica'); }
+    function previousSeason() {
+      const cur = currentSeason();
+      return cur ? state.seasons.find(s => s.id === cur.previousSeasonId) || null : null;
+    }
+    function currentStats() { return state.statsBySeason[state.currentSeasonId] || {}; }
+    function previousStats() { const prev = previousSeason(); return prev ? (state.statsBySeason[prev.id] || {}) : {}; }
+    function tacticsThisSeason() { return state.tacticsBySeason[state.currentSeasonId] || []; }
+    function currentTactic() { return tacticsThisSeason().find(t => t.id === state.currentTacticId) || null; }
+    function seasonPlayers() { const stats = currentStats(); return state.players.filter(p => stats[p.id]); }
+    function seasonPlayersEligibleBase() {
+      const stats = currentStats();
+      return seasonPlayers().filter(p => {
+        const status = (stats[p.id] || {}).squadStatus;
+        return status !== 'Vendido' && status !== 'Emprestado';
+      });
+    }
+    function seasonPlayersEligible() {
+      const base = seasonPlayersEligibleBase();
+      if (!isCLMode()) return base;
+      const stats = currentStats();
+      return base.filter(p => (stats[p.id] || {}).clStatus === 'Inscrito');
+    }
+
+    function showToast(msg, tone='ok') {
+      state.toast = { msg, tone };
+      clearTimeout(state.toastTimer);
+      state.toastTimer = setTimeout(() => { state.toast = null; render(); }, 3200);
+      render();
+    }
+
+    function isUnprocessedWarning(playerId, hasPrevious) {
+      if (!hasPrevious) return false;
+      const cur = currentStats()[playerId];
+      if (!cur || cur.isNew) return false;
+      const prev = previousStats()[playerId];
+      if (!prev) return false;
+      return cur.ca === prev.ca && cur.pa === prev.pa && cur.value === prev.value;
+    }
+    function compareField(playerId, field) {
+      const cur = currentStats()[playerId];
+      if (!cur) return { status: 'none' };
+      const prevMap = previousStats();
+      if (cur.isNew || !prevMap[playerId]) return { status: 'new', cur: cur[field] };
+      const prevVal = prevMap[playerId][field];
+      const curVal = cur[field];
+      if (prevVal === undefined || prevVal === null) return { status: 'new', cur: curVal };
+      if (curVal > prevVal) return { status: 'up', cur: curVal, prev: prevVal };
+      if (curVal < prevVal) return { status: 'down', cur: curVal, prev: prevVal };
+      return { status: 'same', cur: curVal, prev: prevVal };
+    }
+
+    function openCreatePlayer() {
+      state.playerModal = {
+        mode: 'create',
+        player: { id: uid(), name: '', type: 'real', mainPosition: 'DC', secondaryPositions: [], notes: '' },
+        stats: { age: 20, ca: 1, pa: 1, value: 0, squadStatus: 'Fica', clStatus: 'Não Inscrito', seasonRole: 'Restantes', isNew: true }
+      };
+      render();
+    }
+
+    function openEditPlayer(playerId) {
+      const p = state.players.find(x => x.id === playerId);
+      if (!p) return;
+      const stats = currentStats()[playerId] || { age:20, ca:1, pa:1, value:0, squadStatus:'Fica', clStatus:'Não Inscrito', seasonRole:'Restantes', isNew:false };
+      state.playerModal = { mode: 'edit', player: structuredCloneSafe(p), stats: structuredCloneSafe(stats) };
+      render();
+    }
+
+    function savePlayerFromModal() {
+      const modal = state.playerModal;
+      if (!modal) return;
+      const player = modal.player;
+      const stats = modal.stats;
+      stats.ca = clampRating(stats.ca);
+      stats.pa = clampRating(stats.pa);
+      stats.value = clampMoney(stats.value);
+      stats.squadStatus = normalizeLegacyValue('squadStatus', stats.squadStatus);
+      stats.seasonRole = normalizeLegacyValue('seasonRole', stats.seasonRole);
+      if (!player.name.trim()) return;
+      const existingIndex = state.players.findIndex(p => p.id === player.id);
+      if (existingIndex >= 0) state.players[existingIndex] = structuredCloneSafe(player);
+      else state.players.push(structuredCloneSafe(player));
+      state.statsBySeason[state.currentSeasonId] = state.statsBySeason[state.currentSeasonId] || {};
+      state.statsBySeason[state.currentSeasonId][player.id] = structuredCloneSafe(stats);
+      Object.keys(state.statsBySeason).forEach(sid => {
+        Object.keys(state.statsBySeason[sid] || {}).forEach(pid => {
+          const s = state.statsBySeason[sid][pid] || {};
+          s.ca = clampRating(s.ca);
+          s.pa = clampRating(s.pa);
+          s.value = clampMoney(s.value);
+          s.squadStatus = normalizeLegacyValue('squadStatus', s.squadStatus);
+          s.seasonRole = normalizeLegacyValue('seasonRole', s.seasonRole);
+          state.statsBySeason[sid][pid] = s;
+        });
+      });
+      pruneTacticsForIneligiblePlayers();
+      persistAll();
+      state.playerModal = null;
+      showToast((player.name || 'Jogador') + ' guardado.');
+    }
+
+    function requestDeletePlayer(playerId) {
+      const p = state.players.find(x => x.id === playerId);
+      if (!p) return;
+      state.deleteModal = { playerId };
+      render();
+    }
+
+    function confirmDelete(scope) {
+      const p = state.players.find(x => x.id === state.deleteModal?.playerId);
+      if (!p) return;
+      if (scope === 'season') {
+        if (state.statsBySeason[state.currentSeasonId]) delete state.statsBySeason[state.currentSeasonId][p.id];
+        const list = tacticsThisSeason().map(t => {
+          const assignments = { ...t.assignments };
+          Object.keys(assignments).forEach(slotId => { if (assignments[slotId] === p.id) delete assignments[slotId]; });
+          return { ...t, assignments };
+        });
+        state.tacticsBySeason[state.currentSeasonId] = list;
+        Object.keys(state.statsBySeason).forEach(sid => {
+        Object.keys(state.statsBySeason[sid] || {}).forEach(pid => {
+          const s = state.statsBySeason[sid][pid] || {};
+          s.ca = clampRating(s.ca);
+          s.pa = clampRating(s.pa);
+          s.value = clampMoney(s.value);
+          s.squadStatus = normalizeLegacyValue('squadStatus', s.squadStatus);
+          s.seasonRole = normalizeLegacyValue('seasonRole', s.seasonRole);
+          state.statsBySeason[sid][pid] = s;
+        });
+      });
+      persistAll();
+        state.deleteModal = null;
+        showToast(p.name + ' removido desta época.');
+      } else {
+        state.players = state.players.filter(pl => pl.id !== p.id);
+        Object.keys(state.statsBySeason).forEach(sid => { if (state.statsBySeason[sid]) delete state.statsBySeason[sid][p.id]; });
+        Object.keys(state.tacticsBySeason).forEach(sid => {
+          state.tacticsBySeason[sid] = (state.tacticsBySeason[sid] || []).map(t => {
+            const assignments = { ...t.assignments };
+            Object.keys(assignments).forEach(slotId => { if (assignments[slotId] === p.id) delete assignments[slotId]; });
+            return { ...t, assignments };
+          });
+        });
+        Object.keys(state.statsBySeason).forEach(sid => {
+        Object.keys(state.statsBySeason[sid] || {}).forEach(pid => {
+          const s = state.statsBySeason[sid][pid] || {};
+          s.ca = clampRating(s.ca);
+          s.pa = clampRating(s.pa);
+          s.value = clampMoney(s.value);
+          s.squadStatus = normalizeLegacyValue('squadStatus', s.squadStatus);
+          s.seasonRole = normalizeLegacyValue('seasonRole', s.seasonRole);
+          state.statsBySeason[sid][pid] = s;
+        });
+      });
+      persistAll();
+        state.deleteModal = null;
+        showToast(p.name + ' apagado definitivamente.', 'warn');
+      }
+    }
+
+    function updateFieldForPlayer(playerId, field, value) {
+      state.statsBySeason[state.currentSeasonId] = state.statsBySeason[state.currentSeasonId] || {};
+      let v = value;
+      if (field === 'ca' || field === 'pa') v = clampRating(value);
+      if (field === 'value') v = clampMoney(value);
+      if (field === 'squadStatus' || field === 'seasonRole') v = normalizeLegacyValue(field, value);
+      if (field === 'age') v = Math.max(0, Number(value) || 0);
+      state.statsBySeason[state.currentSeasonId][playerId] = { ...(state.statsBySeason[state.currentSeasonId][playerId] || {}), [field]: v };
+      Object.keys(state.statsBySeason).forEach(sid => {
+        Object.keys(state.statsBySeason[sid] || {}).forEach(pid => {
+          const s = state.statsBySeason[sid][pid] || {};
+          s.ca = clampRating(s.ca);
+          s.pa = clampRating(s.pa);
+          s.value = clampMoney(s.value);
+          s.squadStatus = normalizeLegacyValue('squadStatus', s.squadStatus);
+          s.seasonRole = normalizeLegacyValue('seasonRole', s.seasonRole);
+          state.statsBySeason[sid][pid] = s;
+        });
+      });
+      if (field === 'squadStatus' || field === 'clStatus') pruneTacticsForIneligiblePlayers();
+      persistAll();
+      render();
+    }
+
+    function createSeason(label) {
+      const prevId = state.currentSeasonId;
+      const newSeason = { id: uid(), label, previousSeasonId: prevId, clMode: false };
+      state.seasons.push(newSeason);
+      const prevStats = state.statsBySeason[prevId] || {};
+      const inherited = {};
+      Object.keys(prevStats).forEach(pid => {
+        if (prevStats[pid].squadStatus === 'Vendido') return;
+        const returningFromLoan = prevStats[pid].squadStatus === 'Emprestado';
+        inherited[pid] = { ...prevStats[pid], age: (prevStats[pid].age || 0) + 1, isNew: false, squadStatus: returningFromLoan ? 'Fica' : prevStats[pid].squadStatus };
+      });
+      state.statsBySeason[newSeason.id] = inherited;
+      const prevTactics = state.tacticsBySeason[prevId] || [];
+      state.tacticsBySeason[newSeason.id] = prevTactics.map(t => ensureTacticCompatibility({ ...structuredCloneSafe(t), id: uid(), assignments: { ...(t.assignments || {}) }, reserveAssignments: { ...(t.reserveAssignments || {}) } }));
+      state.currentSeasonId = newSeason.id;
+      ensureCurrentTactic();
+      Object.keys(state.statsBySeason).forEach(sid => {
+        Object.keys(state.statsBySeason[sid] || {}).forEach(pid => {
+          const s = state.statsBySeason[sid][pid] || {};
+          s.ca = clampRating(s.ca);
+          s.pa = clampRating(s.pa);
+          s.value = clampMoney(s.value);
+          s.squadStatus = normalizeLegacyValue('squadStatus', s.squadStatus);
+          s.seasonRole = normalizeLegacyValue('seasonRole', s.seasonRole);
+          state.statsBySeason[sid][pid] = s;
+        });
+      });
+      persistAll();
+      state.seasonModal = false;
+      showToast('Época ' + label + ' criada — idades atualizadas (+1).');
+    }
+
+    function createTacticFromFormation(key, customName) {
+      const preset = FORMATIONS[key];
+      const tactic = { id: uid(), name: customName || preset.name, formationKey: key, slots: preset.slots.map(s => ({ id: uid(), label: s.label, category: s.category, x: s.x, y: s.y })), assignments: {}, reserveAssignments: {} };
+      state.tacticsBySeason[state.currentSeasonId] = [...(state.tacticsBySeason[state.currentSeasonId] || []), tactic];
+      state.currentTacticId = tactic.id;
+      state.tacticModal = null;
+      Object.keys(state.statsBySeason).forEach(sid => {
+        Object.keys(state.statsBySeason[sid] || {}).forEach(pid => {
+          const s = state.statsBySeason[sid][pid] || {};
+          s.ca = clampRating(s.ca);
+          s.pa = clampRating(s.pa);
+          s.value = clampMoney(s.value);
+          s.squadStatus = normalizeLegacyValue('squadStatus', s.squadStatus);
+          s.seasonRole = normalizeLegacyValue('seasonRole', s.seasonRole);
+          state.statsBySeason[sid][pid] = s;
+        });
+      });
+      persistAll();
+      showToast('Tática "' + tactic.name + '" criada com 11 posições.');
+    }
+
+    function updateTacticFromModal(tacticId, name, slotDrafts) {
+      if (slotDrafts.length !== 11) return showToast('Uma tática tem de ter exatamente 11 posições.', 'warn');
+      if (slotDrafts.some(s => !String(s.label || '').trim())) return showToast('Todas as posições precisam de um nome.', 'warn');
+      const list = state.tacticsBySeason[state.currentSeasonId] || [];
+      const idx = list.findIndex(t => t.id === tacticId);
+      if (idx < 0) return;
+      const existing = list[idx];
+      const updatedSlots = existing.slots.map((s, i) => ({ ...s, label: slotDrafts[i].label, category: slotDrafts[i].category, x: Number(slotDrafts[i].x), y: Number(slotDrafts[i].y) }));
+      list[idx] = { ...existing, name: name || existing.name, slots: updatedSlots };
+      state.tacticModal = null;
+      persistAll();
+      showToast('Tática "' + list[idx].name + '" atualizada.');
+      render();
+    }
+
+    function createCustomTactic(name, slotDrafts) {
+      if (slotDrafts.length !== 11) return showToast('Uma tática tem de ter exatamente 11 posições.', 'warn');
+      if (slotDrafts.some(s => !String(s.label || '').trim())) return showToast('Todas as posições precisam de um nome.', 'warn');
+      const tactic = { id: uid(), name: name || 'Tática personalizada', formationKey: 'custom', slots: slotDrafts.map((s, i) => ({ id: uid(), label: s.label, category: s.category, x: Number(s.x), y: Number(s.y) })), assignments: {}, reserveAssignments: {} };
+      state.tacticsBySeason[state.currentSeasonId] = [...(state.tacticsBySeason[state.currentSeasonId] || []), tactic];
+      state.currentTacticId = tactic.id;
+      state.tacticModal = null;
+      Object.keys(state.statsBySeason).forEach(sid => {
+        Object.keys(state.statsBySeason[sid] || {}).forEach(pid => {
+          const s = state.statsBySeason[sid][pid] || {};
+          s.ca = clampRating(s.ca);
+          s.pa = clampRating(s.pa);
+          s.value = clampMoney(s.value);
+          s.squadStatus = normalizeLegacyValue('squadStatus', s.squadStatus);
+          s.seasonRole = normalizeLegacyValue('seasonRole', s.seasonRole);
+          state.statsBySeason[sid][pid] = s;
+        });
+      });
+      persistAll();
+      showToast('Tática "' + tactic.name + '" criada com 11 posições.');
+    }
+
+    function pruneTacticsForIneligiblePlayers() {
+      const eligibleIds = new Set(seasonPlayersEligible().map(p => p.id));
+      const list = state.tacticsBySeason[state.currentSeasonId] || [];
+      state.tacticsBySeason[state.currentSeasonId] = list.map(t => {
+        const assignments = { ...(t.assignments || {}) };
+        const reserveAssignments = { ...(t.reserveAssignments || {}) };
+        Object.keys(assignments).forEach(slotId => { if (assignments[slotId] && !eligibleIds.has(assignments[slotId])) delete assignments[slotId]; });
+        Object.keys(reserveAssignments).forEach(slotId => { if (reserveAssignments[slotId] && !eligibleIds.has(reserveAssignments[slotId])) delete reserveAssignments[slotId]; });
+        return { ...t, assignments, reserveAssignments };
+      });
+    }
+
+    function assignPlayerToSlot(tacticId, slotId, playerId, team = 'main') {
+      const list = state.tacticsBySeason[state.currentSeasonId] || [];
+      const tacticBefore = list.find(t => t.id === tacticId);
+      const key = team === 'reserve' ? 'reserveAssignments' : 'assignments';
+      const prevPlayerId = tacticBefore ? (tacticBefore[key] || {})[slotId] : null;
+
+      state.tacticsBySeason[state.currentSeasonId] = list.map(t => {
+        if (t.id !== tacticId) return t;
+        const assignments = { ...((t[key]) || {}) };
+        if (playerId === null) delete assignments[slotId]; else assignments[slotId] = playerId;
+        return { ...t, [key]: assignments }; 
+      });
+
+      state.statsBySeason[state.currentSeasonId] = state.statsBySeason[state.currentSeasonId] || {};
+      const curStats = state.statsBySeason[state.currentSeasonId];
+      if (prevPlayerId && prevPlayerId !== playerId) {
+        curStats[prevPlayerId] = { ...(curStats[prevPlayerId] || {}), seasonRole: 'Restantes' };
+      }
+      if (playerId) {
+        curStats[playerId] = { ...(curStats[playerId] || {}), seasonRole: team === 'reserve' ? 'Suplente' : 'Titular' };
+      }
+
+      Object.keys(state.statsBySeason).forEach(sid => {
+        Object.keys(state.statsBySeason[sid] || {}).forEach(pid => {
+          const s = state.statsBySeason[sid][pid] || {};
+          s.ca = clampRating(s.ca);
+          s.pa = clampRating(s.pa);
+          s.value = clampMoney(s.value);
+          s.squadStatus = normalizeLegacyValue('squadStatus', s.squadStatus);
+          s.seasonRole = normalizeLegacyValue('seasonRole', s.seasonRole);
+          state.statsBySeason[sid][pid] = s;
+        });
+      });
+      persistAll();
+      state.slotPicker = null;
+      render();
+    }
+
+    function deleteTactic(tacticId) {
+      state.tacticsBySeason[state.currentSeasonId] = (state.tacticsBySeason[state.currentSeasonId] || []).filter(t => t.id !== tacticId);
+      ensureCurrentTactic();
+      Object.keys(state.statsBySeason).forEach(sid => {
+        Object.keys(state.statsBySeason[sid] || {}).forEach(pid => {
+          const s = state.statsBySeason[sid][pid] || {};
+          s.ca = clampRating(s.ca);
+          s.pa = clampRating(s.pa);
+          s.value = clampMoney(s.value);
+          s.squadStatus = normalizeLegacyValue('squadStatus', s.squadStatus);
+          s.seasonRole = normalizeLegacyValue('seasonRole', s.seasonRole);
+          state.statsBySeason[sid][pid] = s;
+        });
+      });
+      persistAll();
+      showToast('Tática apagada.');
+    }
+
+    function deleteCurrentSeason(seasonId) {
+      if (state.seasons.length <= 1) { showToast('Não é possível apagar a única época.'); return; }
+      const idx = state.seasons.findIndex(s => s.id === seasonId);
+      if (idx === -1) return;
+      state.seasons = state.seasons.filter(s => s.id !== seasonId);
+      delete state.statsBySeason[seasonId];
+      delete state.tacticsBySeason[seasonId];
+      state.seasons.forEach(s => { if (s.previousSeasonId === seasonId) s.previousSeasonId = null; });
+      if (state.currentSeasonId === seasonId) {
+        const fallback = state.seasons[idx - 1] || state.seasons[0];
+        state.currentSeasonId = fallback ? fallback.id : null;
+        state.currentTacticId = null;
+        ensureCurrentTactic();
+      }
+      persistAll();
+      showToast('Época apagada.');
+    }
+
+    function structuredCloneSafe(obj) { return JSON.parse(JSON.stringify(obj)); }
+
+    function syncTopbarHeightVar() {
+      const topbar = document.querySelector('.topbar');
+      if (!topbar) return;
+      document.documentElement.style.setProperty('--topbar-h', topbar.offsetHeight + 'px');
+    }
+    window.addEventListener('resize', syncTopbarHeightVar);
+
+    function render() {
+      ensureCurrentTactic();
+      const app = document.getElementById('app');
+      const players = seasonPlayers();
+      const curStats = currentStats();
+      const prevSeason = previousSeason();
+      const tactic = currentTactic();
+      const tactics = tacticsThisSeason();
+
+      app.innerHTML = `
+        <header class="topbar">
+          <div class="brand">
+            <div class="brand-badge">${icon('shield')}</div>
+            <div class="brand-text">FM SQUAD PLANNER</div>
+          </div>
+          <div class="topbar-right">
+            <div class="selector-group">
+              <div class="selector-stack">
+                <label class="selector-label">Idioma / Language</label>
+                <select class="select" id="lang-select">
+                  <option value="pt" ${currentLang === 'pt' ? 'selected' : ''}>Português</option>
+                  <option value="en" ${currentLang === 'en' ? 'selected' : ''}>English</option>
+                </select>
+              </div>
+            </div>
+            <div class="selector-group">
+              <div class="selector-stack">
+                <label class="selector-label">Champions League</label>
+                <select class="select" id="cl-mode-select">
+                  <option value="nao" ${!isCLMode() ? 'selected' : ''}>Não</option>
+                  <option value="sim" ${isCLMode() ? 'selected' : ''}>Sim</option>
+                </select>
+              </div>
+              <div class="selector-stack">
+                <label class="selector-label">Época</label>
+                <select class="select" id="season-select">
+                  ${state.seasons.map(s => `<option value="${esc(s.id)}" ${s.id === state.currentSeasonId ? 'selected' : ''}>${esc(s.label)}</option>`).join('')}
+                </select>
+              </div>
+              <button class="icon-btn" id="new-season-btn" title="Nova época">${icon('plus')}</button>
+              <button class="icon-btn" id="delete-season-btn" title="Apagar época atual" style="color:var(--red)">${icon('trash')}</button>
+            </div>
+            <div class="selector-group">
+              <div class="selector-stack">
+                <label class="selector-label">Tática</label>
+                <select class="select" id="tactic-select">
+                  ${tactics.length ? tactics.map(t => `<option value="${esc(t.id)}" ${t.id === state.currentTacticId ? 'selected' : ''}>${esc(t.name)}</option>`).join('') : '<option value="">Sem táticas</option>'}
+                </select>
+              </div>
+              <button class="icon-btn" id="new-tactic-btn" title="Nova tática">${icon('plus')}</button>
+              ${tactic ? `<button class="icon-btn" id="delete-tactic-topbar-btn" title="Apagar tática atual" style="color:var(--red)">${icon('trash')}</button>` : ''}
+            </div>
+          </div>
+        </header>
+        <div class="shell">
+          <nav class="sidenav">
+            ${navButton('plantel', icon('users'), 'Plantel')}
+            ${navButton('plantelEpoca', icon('shield'), 'Plantel da Época')}
+            ${navButton('campo', icon('field'), 'Campo Tático')}
+            ${navButton('comparacao', icon('compare'), 'Evolução')}
+            ${navButton('estado', icon('board'), 'Estado do Plantel')}
+            ${navButton('papel', icon('star'), 'Papel da Época')}
+            ${navButton('comparacaoAvancada', icon('compare'), 'Comparação')}
+            ${navButton('contratacoes', icon('plus'), 'Contratações')}
+            ${navButton('olheiros', icon('scout'), 'Olheiros')}
+          </nav>
+          <main class="main">
+            <section class="panel"><div class="panel-body">${renderTab(players, curStats, prevSeason, tactic, tactics)}</div></section>
+          </main>
+        </div>
+      `;
+
+      bindAppEvents();
+      renderModal();
+      renderToast();
+      syncTopbarHeightVar();
+    }
+
+    function navButton(id, iconChar, label) {
+      return `<button class="nav-item ${state.tab === id ? 'active' : ''}" data-tab="${id}"><span class="icon">${iconChar}</span><span>${label}</span></button>`;
+    }
+
+    function renderTab(players, curStats, prevSeason, tactic, tactics) {
+      if (state.tab === 'plantel') return renderPlantel(players, curStats, !!prevSeason);
+      if (state.tab === 'plantelEpoca') return renderPlantelEpoca(curStats, !!prevSeason);
+      if (state.tab === 'campo') return renderCampo(tactic, players, tactics.length);
+      if (state.tab === 'comparacao') return renderComparacao(players, prevSeason);
+      if (state.tab === 'estado') return renderBoard('Estado do Plantel', activeSquadStatuses(), activeStatusField(), players, curStats);
+      if (state.tab === 'comparacaoAvancada') return renderComparacaoAvancada(players);
+      if (state.tab === 'olheiros') return renderOlheiros();
+      if (state.tab === 'contratacoes') return renderContratacoes();
+      return renderBoard('Papel na Época', SEASON_ROLES, 'seasonRole', players, curStats);
+    }
+
+    function renderPlantel(players, curStats, hasPrevious) {
+      const basePlayers = isCLMode() ? seasonPlayersEligibleBase() : players;
+      const filtered = basePlayers.filter(p =>
+        (!state.filterPos || p.mainPosition === state.filterPos) &&
+        (!state.filterStatus || activeStatusValue(curStats[p.id]) === state.filterStatus)
+      );
+      return `
+        <div class="tab-header">
+          <h2 class="tab-title">Plantel ${isCLMode() ? '<span class="faint" style="font-size:12px;font-weight:600;text-transform:uppercase;letter-spacing:.04em;">· Champions League</span>' : ''}</h2>
+          <div class="toolbar">
+            <div style="display:flex;gap:8px;flex-wrap:nowrap;">
+              <select class="select" id="filter-pos" style="flex:1;min-width:150px;">
+                <option value="">Todas as posições</option>
+                ${CATEGORY_KEYS.map(k => `<option value="${k}" ${state.filterPos === k ? 'selected' : ''}>${POSITION_CATEGORIES[k].label}</option>`).join('')}
+              </select>
+              <select class="select" id="filter-status" style="flex:1;min-width:150px;">
+                <option value="">Todos os estados</option>
+                ${activeSquadStatuses().map(st => `<option value="${esc(st)}" ${state.filterStatus === st ? 'selected' : ''}>${esc(st)}</option>`).join('')}
+              </select>
+            </div>
+            <button class="btn btn-ghost" id="import-players-btn">⇪ Importar CSV</button>
+            <button class="btn btn-primary" id="new-player-btn">${icon('plus')} Novo jogador</button>
+          </div>
+        </div>
+        ${renderGroupedSquad(filtered, curStats, hasPrevious)}
+      `;
+    }
+
+    function renderPlantelEpoca(curStats, hasPrevious) {
+      const eligible = seasonPlayersEligible();
+      const filtered = state.filterPos ? eligible.filter(p => p.mainPosition === state.filterPos) : eligible;
+      const epocaAvgLine = formatAverageLine(averageSummaryForIds(eligible.map(p => p.id)), 'Ainda não há jogadores nesta época.');
+      return `
+        <div class="tab-header">
+          <h2 class="tab-title">Plantel da Época ${isCLMode() ? '<span class="faint" style="font-size:12px;font-weight:600;text-transform:uppercase;letter-spacing:.04em;">· Champions League</span>' : ''}</h2>
+          <div class="toolbar">
+            <select class="select" id="filter-pos">
+              <option value="">Todas as posições</option>
+              ${CATEGORY_KEYS.map(k => `<option value="${k}" ${state.filterPos === k ? 'selected' : ''}>${POSITION_CATEGORIES[k].label}</option>`).join('')}
+            </select>
+          </div>
+        </div>
+        <div class="muted" style="margin-bottom:14px;line-height:1.6;">${epocaAvgLine}</div>
+        ${renderGroupedSquad(filtered, curStats, hasPrevious)}
+      `;
+    }
+
+    function renderOlheiros() {
+      const filtered = state.filterRegion ? state.scouts.filter(s => s.region === state.filterRegion) : state.scouts;
+      const groups = SCOUT_REGIONS.map(region => ({
+        region,
+        scouts: filtered.filter(s => (s.region || SCOUT_REGIONS[0]) === region).slice().sort((a,b) => String(a.name).localeCompare(String(b.name), 'pt'))
+      })).filter(g => g.scouts.length);
+      return `
+        <div class="tab-header">
+          <h2 class="tab-title">Olheiros</h2>
+          <div class="toolbar">
+            <select class="select" id="filter-region">
+              <option value="">Todas as regiões</option>
+              ${SCOUT_REGIONS.map(r => `<option value="${esc(r)}" ${state.filterRegion === r ? 'selected' : ''}>${esc(r)}</option>`).join('')}
+            </select>
+            <button class="btn btn-primary" id="new-scout-btn">${icon('plus')} Novo olheiro</button>
+          </div>
+        </div>
+        <div class="muted" style="margin-bottom:14px;line-height:1.6;">Gere os olheiros e a região onde cada um trabalha.</div>
+        ${!groups.length ? `<div class="empty"><div><div style="font-size:28px;margin-bottom:8px;">${icon('scout')}</div><div>Ainda não há olheiros registados.</div></div></div>` : groups.map(g => `
+        <section style="margin-bottom:16px;">
+          <div style="display:flex;justify-content:space-between;align-items:center;gap:10px;margin:0 0 8px;">
+            <h3 style="margin:0;font-size:14px;text-transform:uppercase;letter-spacing:.05em;color:var(--muted);">${esc(g.region)} <span style="color:var(--faint);font-weight:500;">(${g.scouts.length})</span></h3>
+          </div>
+          <div class="table-wrap">
+            <table class="squad-table">
+              <colgroup>
+                <col style="width:26%" />
+                <col style="width:22%" />
+                <col style="width:44%" />
+                <col style="width:68px" />
+              </colgroup>
+              <thead><tr><th>Nome</th><th>Região</th><th>Notas</th><th></th></tr></thead>
+              <tbody>
+                ${g.scouts.map(s => `<tr>
+                <td><strong>${esc(s.name)}</strong></td>
+                <td><select class="select scout-region-select" data-scout-id="${s.id}" style="min-width:0;">${SCOUT_REGIONS.map(r => `<option value="${esc(r)}" ${(s.region || SCOUT_REGIONS[0]) === r ? 'selected' : ''}>${esc(r)}</option>`).join('')}</select></td>
+                <td class="faint">${esc(s.notes || '')}</td>
+                <td>
+                  <div style="display:flex;gap:6px;">
+                    <button class="icon-btn edit-scout" data-scout-id="${s.id}" title="Editar">${icon('edit')}</button>
+                    <button class="icon-btn delete-scout" data-scout-id="${s.id}" title="Apagar" style="color:var(--red)">${icon('trash')}</button>
+                  </div>
+                </td>
+              </tr>`).join('')}
+              </tbody>
+            </table>
+          </div>
+        </section>`).join('')}
+      `;
+    }
+
+
+    function openCreateScout() {
+      state.scoutModal = { mode: 'create', scout: { id: uid(), name: '', region: SCOUT_REGIONS[0], notes: '' } };
+      renderModal();
+    }
+
+    function openEditScout(scoutId) {
+      const s = state.scouts.find(x => x.id === scoutId);
+      if (!s) return;
+      state.scoutModal = { mode: 'edit', scout: structuredCloneSafe(s) };
+      renderModal();
+    }
+
+    function saveScoutFromModal() {
+      const modal = state.scoutModal;
+      if (!modal) return;
+      const scout = modal.scout;
+      if (!scout.name.trim()) return;
+      const idx = state.scouts.findIndex(s => s.id === scout.id);
+      if (idx >= 0) state.scouts[idx] = structuredCloneSafe(scout);
+      else state.scouts.push(structuredCloneSafe(scout));
+      persistScouts();
+      state.scoutModal = null;
+      showToast((scout.name || 'Olheiro') + ' guardado.');
+      render();
+    }
+
+    function requestDeleteScout(scoutId) {
+      const s = state.scouts.find(x => x.id === scoutId);
+      if (!s) return;
+      state.confirmModal = {
+        title: 'Apagar olheiro',
+        message: `Vais apagar o olheiro <strong>${esc(s.name)}</strong>. Esta ação não pode ser desfeita.`,
+        confirmLabel: 'Apagar olheiro',
+        onConfirm: () => {
+          state.scouts = state.scouts.filter(x => x.id !== scoutId);
+          persistScouts();
+          showToast('Olheiro apagado.');
+          render();
+        }
+      };
+      renderModal();
+    }
+
+    function renderScoutModal(root) {
+      const m = state.scoutModal;
+      root.innerHTML = modalShell(m.mode === 'create' ? 'Novo olheiro' : 'Editar olheiro', '480px', `
+        <div class="form-grid">
+          <div class="field field-wide"><label>Nome</label><input class="input" id="sm-name" value="${esc(m.scout.name)}" autofocus /></div>
+          <div class="field field-wide"><label>Região</label><select class="select" id="sm-region">${SCOUT_REGIONS.map(r => `<option value="${esc(r)}" ${m.scout.region===r?'selected':''}>${esc(r)}</option>`).join('')}</select></div>
+          <div class="field field-wide"><label>Notas (opcional)</label><textarea class="textarea" id="sm-notes">${esc(m.scout.notes || '')}</textarea></div>
+        </div>
+        <div class="modal-footer"><button class="btn btn-ghost" id="sm-cancel">Cancelar</button><button class="btn btn-primary" id="sm-save">${icon('plus')} Guardar</button></div>
+      `);
+      attachModalClose(root, () => { state.scoutModal = null; renderModal(); });
+      root.querySelector('#sm-cancel').onclick = () => { state.scoutModal = null; renderModal(); };
+      root.querySelector('#sm-save').onclick = () => {
+        state.scoutModal.scout.name = root.querySelector('#sm-name').value.trim();
+        state.scoutModal.scout.region = root.querySelector('#sm-region').value;
+        state.scoutModal.scout.notes = root.querySelector('#sm-notes').value;
+        saveScoutFromModal();
+      };
+    }
+
+    function renderContratacoes() {
+      const filtered = state.filterRecruitPos ? state.recruits.filter(r => r.mainPosition === state.filterRecruitPos) : state.recruits;
+      const groups = CATEGORY_KEYS.map(k => ({
+        key: k,
+        label: POSITION_CATEGORIES[k].label,
+        recruits: filtered.filter(r => (r.mainPosition || CATEGORY_KEYS[0]) === k).slice().sort((a,b) => String(a.name).localeCompare(String(b.name), 'pt'))
+      })).filter(g => g.recruits.length);
+      return `
+        <div class="tab-header">
+          <h2 class="tab-title">Contratações</h2>
+          <div class="toolbar">
+            <select class="select" id="filter-recruit-pos">
+              <option value="">Todas as posições</option>
+              ${CATEGORY_KEYS.map(k => `<option value="${k}" ${state.filterRecruitPos === k ? 'selected' : ''}>${POSITION_CATEGORIES[k].label}</option>`).join('')}
+            </select>
+            <button class="btn btn-primary" id="new-recruit-btn">${icon('plus')} Novo candidato</button>
+          </div>
+        </div>
+        <div class="muted" style="margin-bottom:14px;line-height:1.6;">Candidatos a contratar — organizados por posição, sem CSV. Adicionados manualmente para comparar antes de meter no plantel.</div>
+        ${!groups.length ? `<div class="empty"><div><div style="font-size:28px;margin-bottom:8px;">${icon('plus')}</div><div>Ainda não há candidatos registados.</div></div></div>` : groups.map(g => `
+        <section style="margin-bottom:16px;">
+          <div style="display:flex;justify-content:space-between;align-items:center;gap:10px;margin:0 0 8px;">
+            <h3 style="margin:0;font-size:14px;text-transform:uppercase;letter-spacing:.05em;color:var(--muted);">${esc(g.label)} <span style="color:var(--faint);font-weight:500;">(${g.recruits.length})</span></h3>
+          </div>
+          <div class="table-wrap">
+            <table class="squad-table">
+              <colgroup>
+                <col style="width:26%" />
+                <col style="width:10%" />
+                <col style="width:9%" />
+                <col style="width:9%" />
+                <col style="width:11%" />
+                <col style="width:9%" />
+                <col style="width:26%" />
+                <col style="width:68px" />
+              </colgroup>
+              <thead><tr><th>Nome</th><th>Idade</th><th>CA</th><th>PA</th><th>€ (M)</th><th>RH</th><th>Notas</th><th></th></tr></thead>
+              <tbody>
+                ${g.recruits.map(r => `<tr>
+                <td><strong>${esc(r.name)}</strong></td>
+                <td>${esc(r.age ?? '')}</td>
+                <td>${esc(r.ca ?? '')}</td>
+                <td>${esc(r.pa ?? '')}</td>
+                <td>${r.value === '' || r.value === undefined ? '' : esc(formatValue(r.value))}</td>
+                <td>${r.rh === undefined || r.rh === null || r.rh === '' ? '<span class="faint">—</span>' : esc(formatValue(r.rh))}</td>
+                <td class="faint">${esc(r.notes || '')}</td>
+                <td>
+                  <div style="display:flex;gap:6px;">
+                    <button class="icon-btn edit-recruit" data-recruit-id="${r.id}" title="Editar">${icon('edit')}</button>
+                    <button class="icon-btn delete-recruit" data-recruit-id="${r.id}" title="Apagar" style="color:var(--red)">${icon('trash')}</button>
+                  </div>
+                </td>
+              </tr>`).join('')}
+              </tbody>
+            </table>
+          </div>
+        </section>`).join('')}
+      `;
+    }
+
+    function openCreateRecruit() {
+      state.recruitModal = { mode: 'create', recruit: { id: uid(), name: '', mainPosition: CATEGORY_KEYS[0], age: '', ca: '', pa: '', value: '', rh: undefined, notes: '' } };
+      renderModal();
+    }
+
+    function openEditRecruit(recruitId) {
+      const r = state.recruits.find(x => x.id === recruitId);
+      if (!r) return;
+      state.recruitModal = { mode: 'edit', recruit: structuredCloneSafe(r) };
+      renderModal();
+    }
+
+    function saveRecruitFromModal() {
+      const modal = state.recruitModal;
+      if (!modal) return;
+      const recruit = modal.recruit;
+      if (!recruit.name.trim()) return;
+      const idx = state.recruits.findIndex(r => r.id === recruit.id);
+      if (idx >= 0) state.recruits[idx] = structuredCloneSafe(recruit);
+      else state.recruits.push(structuredCloneSafe(recruit));
+      persistRecruits();
+      state.recruitModal = null;
+      showToast((recruit.name || 'Candidato') + ' guardado.');
+      render();
+    }
+
+    function requestDeleteRecruit(recruitId) {
+      const r = state.recruits.find(x => x.id === recruitId);
+      if (!r) return;
+      state.confirmModal = {
+        title: 'Apagar candidato',
+        message: `Vais apagar o candidato <strong>${esc(r.name)}</strong>. Esta ação não pode ser desfeita.`,
+        confirmLabel: 'Apagar candidato',
+        onConfirm: () => {
+          state.recruits = state.recruits.filter(x => x.id !== recruitId);
+          persistRecruits();
+          showToast('Candidato apagado.');
+          render();
+        }
+      };
+      renderModal();
+    }
+
+    function renderRecruitModal(root) {
+      const m = state.recruitModal;
+      root.innerHTML = modalShell(m.mode === 'create' ? 'Novo candidato' : 'Editar candidato', '600px', `
+        <div class="form-grid">
+          <div class="field"><label>Nome</label><input class="input" id="rm-name" value="${esc(m.recruit.name)}" autofocus /></div>
+          <div class="field"><label>Posição principal</label><select class="select" id="rm-main">${CATEGORY_KEYS.map(k => `<option value="${k}" ${m.recruit.mainPosition===k?'selected':''}>${POSITION_CATEGORIES[k].label}</option>`).join('')}</select></div>
+          <div class="field"><label>Idade</label><input type="number" class="input" id="rm-age" value="${esc(m.recruit.age ?? '')}" /></div>
+          <div class="field"><label>Capacidade (CA)</label><input type="number" step="0.5" class="input" id="rm-ca" min="0" max="5" value="${esc(m.recruit.ca ?? '')}" /></div>
+          <div class="field"><label>Potencial (PA)</label><input type="number" step="0.5" class="input" id="rm-pa" min="0" max="5" value="${esc(m.recruit.pa ?? '')}" /></div>
+          <div class="field"><label>Preço / Valor (M)</label><input type="number" step="0.1" class="input" id="rm-value" value="${esc(m.recruit.value ?? '')}" /></div>
+          <div class="field"><label>RH (Real Hability, opcional)</label><input type="number" step="0.1" class="input" id="rm-rh" value="${esc(m.recruit.rh ?? '')}" placeholder="—" /></div>
+          <div class="field field-wide"><label>Notas</label><textarea class="textarea" id="rm-notes">${esc(m.recruit.notes || '')}</textarea></div>
+        </div>
+        <div class="modal-footer"><button class="btn btn-ghost" id="rm-cancel">Cancelar</button><button class="btn btn-primary" id="rm-save">${icon('plus')} Guardar</button></div>
+      `);
+      attachModalClose(root, () => { state.recruitModal = null; renderModal(); });
+      root.querySelector('#rm-cancel').onclick = () => { state.recruitModal = null; renderModal(); };
+      root.querySelector('#rm-save').onclick = () => {
+        const recruit = state.recruitModal.recruit;
+        recruit.name = root.querySelector('#rm-name').value.trim();
+        recruit.mainPosition = root.querySelector('#rm-main').value;
+        const ageRaw = root.querySelector('#rm-age').value; recruit.age = ageRaw === '' ? '' : Number(ageRaw);
+        const caRaw = root.querySelector('#rm-ca').value; recruit.ca = caRaw === '' ? '' : Number(caRaw);
+        const paRaw = root.querySelector('#rm-pa').value; recruit.pa = paRaw === '' ? '' : Number(paRaw);
+        const valueRaw = root.querySelector('#rm-value').value; recruit.value = valueRaw === '' ? '' : Number(valueRaw);
+        const rhRaw = root.querySelector('#rm-rh').value; recruit.rh = rhRaw === '' ? undefined : Number(rhRaw);
+        recruit.notes = root.querySelector('#rm-notes').value;
+        saveRecruitFromModal();
+      };
+    }
+
+    function renderCampo(tactic, players, tacticsCount) {
+      if (!tactic) {
+        return `
+          <div class="tab-header"><h2 class="tab-title">Campo Tático</h2></div>
+          <div class="empty"><div><div style="font-size:28px;margin-bottom:8px;">${icon('field')}</div><div>Ainda não há táticas nesta época.</div><div style="margin-top:12px;"><button class="btn btn-primary" id="empty-new-tactic">${icon('plus')} Criar tática</button></div></div></div>
+        `;
+      }
+      const filledMain = tactic.slots.filter(s => tactic.assignments && tactic.assignments[s.id]).length;
+      const filledReserve = tactic.slots.filter(s => tactic.reserveAssignments && tactic.reserveAssignments[s.id]).length;
+      const view = state.campoView === 'reserve' ? 'reserve' : 'main';
+      const activeIds = new Set(Object.values((view === 'reserve' ? tactic.reserveAssignments : tactic.assignments) || {}).filter(Boolean));
+      const tacticAvgLine = formatAverageLine(averageSummaryForIds(activeIds), view === 'reserve' ? 'Sem suplentes escalados ainda nesta tática.' : 'Sem titulares escalados ainda nesta tática.');
+      return `
+        <div class="tab-header">
+          <div>
+            <h2 class="tab-title">${esc(tactic.name)}</h2>
+            <div class="muted" style="margin-top:4px;">${tacticAvgLine}</div>
+          </div>
+          <div class="toolbar"><button class="btn btn-ghost" id="show-remaining-btn">${icon('users')} Restantes</button><button class="btn btn-ghost" id="edit-tactic-btn">${icon('edit')} Editar tática</button><button class="btn btn-danger" id="delete-tactic-btn">${icon('trash')} Apagar tática</button></div>
+        </div>
+        <div class="campo-tabs">
+          <button class="campo-tab team-main ${view === 'main' ? 'active' : ''}" data-campo-view="main">
+            <span class="campo-tab-title">Titulares</span>
+            <span class="campo-tab-count">${filledMain}/11</span>
+          </button>
+          <button class="campo-tab team-reserve ${view === 'reserve' ? 'active' : ''}" data-campo-view="reserve">
+            <span class="campo-tab-title">Suplentes</span>
+            <span class="campo-tab-count">${filledReserve}/11</span>
+          </button>
+        </div>
+        <div class="pitch-wrap">
+          <div class="pitch">${renderPitchMarkup(tactic, players, view)}</div>
+        </div>
+      `;
+    }
+
+    function renderPitchMarkup(tactic, players, team) {
+      return `
+        <div class="pitch-box left"></div>
+        <div class="pitch-box right"></div>
+        <div class="pitch-six left"></div>
+        <div class="pitch-six right"></div>
+        <div class="pitch-spot left"></div>
+        <div class="pitch-spot right"></div>
+        <div class="pitch-arc left"></div>
+        <div class="pitch-arc right"></div>
+        ${renderPitchSlots(tactic, players, team)}
+      `;
+    }
+
+    function renderPitchSlots(tactic, players, team) {
+      const assignments = team === 'reserve' ? (tactic.reserveAssignments || {}) : (tactic.assignments || {});
+      const teamClass = team === 'reserve' ? 'team-reserve' : 'team-main';
+      return tactic.slots.map(slotObj => {
+        const playerId = assignments[slotObj.id] || null;
+        const player = players.find(p => p.id === playerId);
+        const s = player ? (currentStats()[player.id] || {}) : null;
+        return `
+          <div class="pitch-slot" style="left:${slotObj.x}%;top:${slotObj.y}%">
+            <button class="pitch-token ${player ? 'filled ' + teamClass : ''}" data-slot-pick="${slotObj.id}" data-slot-team="${team}" title="Escolher jogador">
+              ${player ? `<span class="pitch-token-inner"><span class="pitch-row"><span class="pitch-line-name">${esc(player.name)}</span><span class="pitch-line-rating">CA ${esc(clampRating(s.ca))} · PA ${esc(clampRating(s.pa))}</span></span><span class="pitch-row"><span>Price ${esc(formatValue(s.value))}M</span><span>Age ${esc(s.age ?? '—')}</span></span></span>` : `<span class="pitch-empty">+</span>`}
+            </button>
+            <div class="pitch-label">${esc(shortSlotLabel(slotObj.label, slotObj.category))}</div>
+            ${player ? `<button class="clear-slot" data-slot-clear="${slotObj.id}" data-slot-team="${team}">Remover</button>` : ''}
+          </div>
+        `;
+      }).join('');
+    }
+
+    function shortSlotLabel(label, category) {
+      const map = {
+        GR: 'GR',
+        DC: 'D (C)',
+        DD: 'D (D)',
+        DE: 'D (E)',
+        MDC: 'MD',
+        MC: 'M (C)',
+        ED: 'MO (D)',
+        EE: 'MO (E)',
+        PL: 'PL (C)'
+      };
+      const lower = String(label || '').toLowerCase();
+      if (category === 'DC' && lower.includes('direito')) return 'D (C)';
+      if (category === 'DC' && lower.includes('esquerdo')) return 'D (C)';
+      if (category === 'DD') return 'D (D)';
+      if (category === 'DE') return 'D (E)';
+      if (category === 'ED') return 'MO (D)';
+      if (category === 'EE') return 'MO (E)';
+      return map[category] || label;
+    }
+
+    function renderComparacao(players, prevSeason) {
+      if (!prevSeason) {
+        return `
+          <div class="tab-header"><h2 class="tab-title">Evolução</h2></div>
+          <div class="empty"><div><div style="font-size:28px;margin-bottom:8px;">${icon('compare')}</div><div>Esta é a primeira época registada. Ainda não há época anterior para comparar.</div></div></div>
+        `;
+      }
+      const rises = [], drops = [], news = [];
+      players.forEach(p => {
+        const ca = compareField(p.id, 'ca');
+        if (ca.status === 'new') news.push(p.name);
+        else if (ca.status === 'up') rises.push({ name: p.name, delta: (ca.cur - ca.prev) });
+        else if (ca.status === 'down') drops.push({ name: p.name, delta: (ca.prev - ca.cur) });
+      });
+      rises.sort((a,b) => b.delta - a.delta);
+      drops.sort((a,b) => b.delta - a.delta);
+      return `
+        <div class="tab-header"><h2 class="tab-title">Evolução vs. época ${esc(prevSeason.label)}</h2></div>
+        <div class="summary-grid">
+          ${summaryCard('Maiores subidas CA', 'var(--green)', rises.slice(0,5).map(r => `${esc(r.name)} (+${r.delta.toFixed(1)})`))}
+          ${summaryCard('Maiores descidas CA', 'var(--red)', drops.slice(0,5).map(r => `${esc(r.name)} (-${r.delta.toFixed(1)})`))}
+          ${summaryCard('Novos no plantel', '#ccd2d8', news.slice(0,8).map(n => esc(n)))}
+        </div>
+        <div class="table-wrap">
+          <table>
+            <thead><tr><th>Nome</th><th>Idade</th><th>CA</th><th>PA</th><th>Valor</th></tr></thead>
+            <tbody>
+              ${players.map(p => `<tr>
+                <td><strong>${esc(p.name)}</strong></td>
+                <td><span>${esc(currentStats()[p.id]?.age ?? '')}</span></td>
+                <td>${cmpCell(clampRating(currentStats()[p.id]?.ca), compareField(p.id, 'ca'))}</td>
+                <td>${cmpCell(clampRating(currentStats()[p.id]?.pa), compareField(p.id, 'pa'))}</td>
+                <td>${cmpCell(formatValueRaw(currentStats()[p.id]?.value), compareField(p.id, 'value'))}</td>
+              </tr>`).join('')}
+            </tbody>
+          </table>
+        </div>
+      `;
+    }
+
+    function renderComparacaoAvancada(players) {
+      const profile = comparisonActiveProfile();
+      const session = state.comparisonSession;
+      const grandTotal = comparisonGrandTotal();
+
+      const rows = profile.attributes.map(attr => {
+        const v = session.values[attr.id] || {};
+        return `
+          <tr>
+            <td class="faint">${esc(profile.name)}</td>
+            <td><input type="text" class="input" data-cv-label="${attr.id}" value="${esc(attr.label)}" placeholder="Nome do atributo" /></td>
+            <td style="text-align:center"><input type="number" step="1" class="input" style="width:80px;text-align:center;margin:0 auto;" data-cv-a="${attr.id}" value="${v.a === undefined || v.a === '' ? '' : v.a}" placeholder="0" /></td>
+            <td style="text-align:center"><input type="number" step="1" class="input" style="width:80px;text-align:center;margin:0 auto;" data-cv-b="${attr.id}" value="${v.b === undefined || v.b === '' ? '' : v.b}" placeholder="0" /></td>
+            <td style="text-align:center"><input type="number" step="0.1" class="input" style="width:80px;text-align:center;margin:0 auto;" data-cv-mult="${attr.id}" value="${attr.multiplier}" /></td>
+            <td id="cv-row-total-${attr.id}" style="font-weight:600;text-align:center;">${comparisonRowTotal(attr).toFixed(1)}</td>
+            <td style="text-align:center"><button class="icon-btn" data-remove-attr="${attr.id}" title="Remover atributo">${icon('trash')}</button></td>
+          </tr>`;
+      }).join('');
+
+      return `
+        <div class="tab-header">
+          <h2 class="tab-title">Comparação</h2>
+          <div class="toolbar">
+            <select class="select" id="cv-profile-select">${state.comparisonProfiles.map(p => `<option value="${esc(p.id)}" ${p.id === profile.id ? 'selected' : ''}>${esc(p.name)}</option>`).join('')}</select>
+            <button class="btn btn-danger" id="cv-delete-profile">${icon('trash')} Apagar perfil</button>
+            <button class="btn btn-ghost" id="cv-import-photo-btn">📷 Importar Foto</button>
+          </div>
+        </div>
+        <div class="toolbar" style="margin-bottom:18px;">
+          <input type="text" class="input" id="cv-new-profile-name" placeholder="Nome do novo perfil" style="max-width:220px;" />
+          <button class="btn btn-ghost" id="cv-new-profile">${icon('plus')} Novo perfil</button>
+        </div>
+        <div class="muted" style="margin-bottom:14px;line-height:1.6;">Compara jogadores/candidatos por atributo: preenche o valor no lado A ou no lado B consoante quem tiver a stat mais alta, e ajusta o multiplicador de importância.</div>
+        <div class="table-wrap">
+          <table>
+            <colgroup>
+              <col style="width:12%" />
+              <col style="width:27%" />
+              <col style="width:12%" />
+              <col style="width:12%" />
+              <col style="width:15%" />
+              <col style="width:14%" />
+              <col style="width:8%" />
+            </colgroup>
+            <thead>
+              <tr>
+                <th>Perfil</th>
+                <th>Atributo</th>
+                <th style="text-align:center">A</th>
+                <th style="text-align:center">B</th>
+                <th style="text-align:center">Multiplicador</th>
+                <th style="text-align:center">Total parcial</th>
+                <th></th>
+              </tr>
+            </thead>
+            <tbody>
+              ${rows || `<tr><td colspan="7" class="faint" style="padding:16px 12px;">Ainda não há atributos neste perfil. Usa "+ Atributo" para começar.</td></tr>`}
+            </tbody>
+            <tfoot>
+              <tr>
+                <td colspan="7"><button class="btn btn-ghost" id="cv-add-attr" style="padding:8px 12px;">${icon('plus')} Atributo</button></td>
+              </tr>
+              <tr style="font-weight:700;">
+                <td>Total A-B</td>
+                <td></td>
+                <td id="cv-total-a" style="text-align:center">${comparisonTotalA(profile).toFixed(1)}</td>
+                <td id="cv-total-b" style="text-align:center">${comparisonTotalB(profile).toFixed(1)}</td>
+                <td></td>
+                <td id="cv-total" style="text-align:center">${grandTotal.toFixed(1)}</td>
+                <td></td>
+              </tr>
+            </tfoot>
+          </table>
+        </div>
+      `;
+    }
+
+    function renderGroupedSquad(players, curStats, hasPrevious) {
+      const groups = CATEGORY_KEYS.map(k => ({ key:k, label: POSITION_CATEGORIES[k].label, players: players.filter(p => p.mainPosition === k) })).filter(g => g.players.length);
+      if (!groups.length) return `<div class="empty"><div><div style="font-size:28px;margin-bottom:8px;">${icon('users')}</div><div>Ainda não há jogadores nesta época.</div></div></div>`;
+      return groups.map(g => {
+        const sorted = g.players.slice().sort((a,b) => sortSquadPlayer(a,b,curStats));
+        return `<section style="margin-bottom:16px;">
+          <div style="display:flex;justify-content:space-between;align-items:center;gap:10px;margin:0 0 8px;">
+            <h3 style="margin:0;font-size:14px;text-transform:uppercase;letter-spacing:.05em;color:var(--muted);">${esc(g.label)} <span style="color:var(--faint);font-weight:500;">(${sorted.length})</span></h3>
+          </div>
+          <div class="table-wrap">
+            <table class="squad-table">
+              <colgroup>
+                <col style="width:20%" />
+                <col style="width:11%" />
+                <col style="width:7%" />
+                <col style="width:7%" />
+                <col style="width:7%" />
+                <col style="width:9%" />
+                <col style="width:8%" />
+                <col style="width:13%" />
+                <col style="width:13%" />
+                <col style="width:68px" />
+              </colgroup>
+              <thead><tr><th>Nome</th><th>Posição</th><th>Idade</th><th>CA</th><th>PA</th><th>€ (M)</th><th>RH</th><th>Estado</th><th>Papel</th><th></th></tr></thead>
+              <tbody>
+                ${sorted.map(p => renderSquadRow(p, curStats[p.id] || {}, hasPrevious)).join('')}
+              </tbody>
+            </table>
+          </div>
+        </section>`;
+      }).join('');
+    }
+
+    function sortSquadPlayer(a,b,curStats){
+      const sa = curStats[a.id] || {}, sb = curStats[b.id] || {};
+      return (sb.ca||0)-(sa.ca||0) || (sb.pa||0)-(sa.pa||0) || (sb.value||0)-(sa.value||0) || (sa.age||99)-(sb.age||99) || String(a.name).localeCompare(String(b.name), 'pt');
+    }
+
+    function renderSquadRow(p,s,hasPrevious){
+      const unprocessed = isUnprocessedWarning(p.id, hasPrevious);
+      return `<tr>
+        <td><strong>${esc(p.name)}</strong>${unprocessed ? ` <span title="CA, PA e Preço iguais à época anterior — pode não ter sido processado" style="color:var(--red);font-weight:800;">!</span>` : ''}</td>
+        <td>${esc(POSITION_CATEGORIES[p.mainPosition]?.label || p.mainPosition)}</td>
+        <td>${esc(s.age ?? '')}</td>
+        <td>${cmpCell(s.ca, hasPrevious ? compareField(p.id, 'ca') : null)}</td>
+        <td>${cmpCell(s.pa, hasPrevious ? compareField(p.id, 'pa') : null)}</td>
+        <td>${cmpCell(formatValue(s.value), hasPrevious ? compareField(p.id, 'value') : null)}</td>
+        <td>${s.rh !== undefined && s.rh !== null && s.rh !== '' ? esc(formatValue(s.rh)) : '<span class="faint">—</span>'}</td>
+        <td><select class="select board-select" data-player-id="${p.id}" data-field="${activeStatusField()}" style="min-width:0;">${activeSquadStatuses().map(opt => `<option value="${esc(opt)}" ${activeStatusValue(s) === opt ? 'selected' : ''}>${esc(opt)}</option>`).join('')}</select></td>
+        <td><select class="select board-select" data-player-id="${p.id}" data-field="seasonRole" style="min-width:0;">${SEASON_ROLES.map(opt => `<option value="${esc(opt)}" ${(s.seasonRole || 'Restantes') === opt ? 'selected' : ''}>${esc(opt)}</option>`).join('')}</select></td>
+        <td>
+          <div style="display:flex;gap:6px;">
+            <button class="icon-btn edit-player" data-player-id="${p.id}" title="Editar">${icon('edit')}</button>
+            <button class="icon-btn delete-player" data-player-id="${p.id}" title="Apagar" style="color:var(--red)">${icon('trash')}</button>
+          </div>
+        </td>
+      </tr>`;
+    }
+    function renderBoard(title, categories, field, players, curStats) {
+      return `
+        <div class="tab-header"><h2 class="tab-title">${title}</h2></div>
+        <div class="kanban">
+          ${categories.map(cat => {
+            const inCat = players.filter(p => (curStats[p.id]?.[field] || categories[0]) === cat);
+            return `<div class="kanban-col">
+              <div class="kanban-head"><span>${esc(cat)}</span><span class="kanban-count">${inCat.length}</span></div>
+              <div class="kanban-body">
+                ${inCat.length ? inCat.map(p => `
+                  <div class="kanban-card">
+                    <div style="font-weight:700;margin-bottom:4px;">${esc(p.name)}</div>
+                    <div class="faint" style="font-size:12px;margin-bottom:8px;">${esc(POSITION_CATEGORIES[p.mainPosition]?.label || p.mainPosition)}</div>
+                    <select class="select board-select" data-player-id="${p.id}" data-field="${field}">
+                      ${categories.map(opt => `<option value="${esc(opt)}" ${(curStats[p.id]?.[field] || categories[0]) === opt ? 'selected' : ''}>${esc(opt)}</option>`).join('')}
+                    </select>
+                  </div>`).join('') : `<div class="faint">Sem jogadores.</div>`}
+              </div>
+            </div>`;
+          }).join('')}
+        </div>
+      `;
+    }
+
+    function summaryCard(title, color, items) {
+      return `<div class="summary-card"><h3 style="color:${color}">${title}</h3>${items.length ? `<ul>${items.map(i => `<li>${i}</li>`).join('')}</ul>` : `<div class="faint">Sem dados.</div>`}</div>`;
+    }
+
+    function pill(text) { return text ? `<span class="pill">${esc(text)}</span>` : '<span class="faint">—</span>'; }
+    function formatValue(value) { return value === undefined || value === null || value === '' ? '' : Number(value).toFixed(1); }
+    function averageSummaryForIds(ids) {
+      const stats = currentStats();
+      const rows = Array.from(ids).map(id => stats[id]).filter(Boolean);
+      if (!rows.length) return null;
+      const avg = key => rows.reduce((sum, s) => sum + (Number(s[key]) || 0), 0) / rows.length;
+      return { count: rows.length, age: avg('age'), ca: avg('ca'), pa: avg('pa'), value: avg('value') };
+    }
+    function formatAverageLine(avgObj, emptyText) {
+      if (!avgObj) return emptyText;
+      return `Média (${avgObj.count}) · Idade ${avgObj.age.toFixed(1)} · CA ${avgObj.ca.toFixed(1)} · PA ${avgObj.pa.toFixed(1)} · Price ${avgObj.value.toFixed(1)}M`;
+    }
+    function formatValueRaw(value) { return value === undefined || value === null || value === '' ? '' : Number(value); }
+    function cmpCell(value, cmp) {
+      if (value === undefined || value === null || value === '') return '<span></span>';
+      if (!cmp || cmp.status === 'none') return `<span>${esc(value)}</span>`;
+      const iconChar = cmp.status === 'up' ? icon('up') : cmp.status === 'down' ? icon('down') : cmp.status === 'same' ? icon('same') : icon('spark');
+      return `<span class="cmp ${cmp.status}">${esc(value)} <span>${iconChar}</span></span>`;
+    }
+    function scoreLR(label) {
+      const l = String(label || '').toLowerCase();
+      if (l.includes('esquerd')) return -1;
+      if (l.includes('direit')) return 1;
+      return 0;
+    }
+
+    function bindAppEvents() {
+      document.querySelectorAll('[data-tab]').forEach(btn => btn.onclick = () => { state.tab = btn.dataset.tab; render(); });
+      document.querySelectorAll('[data-campo-view]').forEach(btn => btn.onclick = () => { state.campoView = btn.dataset.campoView; render(); });
+      const langSelect = document.getElementById('lang-select');
+      if (langSelect) langSelect.onchange = e => setLang(e.target.value);
+      document.getElementById('season-select').onchange = e => { state.currentSeasonId = e.target.value; ensureCurrentTactic(); render(); };
+      const clModeSelect = document.getElementById('cl-mode-select');
+      if (clModeSelect) clModeSelect.onchange = e => {
+        const s = currentSeason();
+        if (!s) return;
+        s.clMode = e.target.value === 'sim';
+        state.filterStatus = '';
+        pruneTacticsForIneligiblePlayers();
+        persistAll();
+        render();
+      };
+      document.getElementById('tactic-select').onchange = e => { state.currentTacticId = e.target.value || null; render(); };
+      document.getElementById('new-season-btn').onclick = () => { state.seasonModal = true; renderModal(); };
+      document.getElementById('delete-season-btn').onclick = () => {
+        const s = state.seasons.find(x => x.id === state.currentSeasonId);
+        if (!s) return;
+        if (state.seasons.length <= 1) { showToast('Não é possível apagar a única época.'); return; }
+        state.confirmModal = {
+          title: 'Apagar época',
+          message: `Vais apagar a época <strong>${esc(s.label)}</strong> e todas as estatísticas e táticas associadas a ela. Esta ação não pode ser desfeita.`,
+          confirmLabel: 'Apagar época',
+          onConfirm: () => deleteCurrentSeason(s.id)
+        };
+        renderModal();
+      };
+      const deleteTacticTopbarBtn = document.getElementById('delete-tactic-topbar-btn');
+      if (deleteTacticTopbarBtn) deleteTacticTopbarBtn.onclick = () => {
+        const t = currentTactic();
+        if (!t) return;
+        state.confirmModal = {
+          title: 'Apagar tática',
+          message: `Vais apagar a tática <strong>${esc(t.name)}</strong> desta época. Esta ação não pode ser desfeita.`,
+          confirmLabel: 'Apagar tática',
+          onConfirm: () => deleteTactic(t.id)
+        };
+        renderModal();
+      };
+      document.getElementById('new-tactic-btn').onclick = () => { state.tacticModal = { mode: 'choose', presetKey: '4-4-2', customName: '', slots: Array.from({length:11}, () => ({ label:'', category:'MC' })) }; renderModal(); };
+
+      const filter = document.getElementById('filter-pos');
+      if (filter) filter.onchange = e => { state.filterPos = e.target.value; render(); };
+      const filterStatus = document.getElementById('filter-status');
+      if (filterStatus) filterStatus.onchange = e => { state.filterStatus = e.target.value; render(); };
+      const importPlayers = document.getElementById('import-players-btn');
+      if (importPlayers) importPlayers.onclick = () => { state.importModal = { status:'idle', rows: [], fileName: '', warnings: [] }; renderModal(); };
+      const newPlayer = document.getElementById('new-player-btn');
+      if (newPlayer) newPlayer.onclick = openCreatePlayer;
+      const emptyNewTactic = document.getElementById('empty-new-tactic');
+      if (emptyNewTactic) emptyNewTactic.onclick = () => { state.tacticModal = { mode: 'choose', presetKey: '4-4-2', customName: '', slots: Array.from({length:11}, () => ({ label:'', category:'MC' })) }; renderModal(); };
+      const showRemainingBtn = document.getElementById('show-remaining-btn');
+      if (showRemainingBtn) showRemainingBtn.onclick = () => { state.remainingModal = true; renderModal(); };
+      const editTacticBtn = document.getElementById('edit-tactic-btn');
+      if (editTacticBtn) editTacticBtn.onclick = () => {
+        const t = currentTactic();
+        if (!t) return;
+        state.tacticModal = { mode: 'edit', tacticId: t.id, customName: t.name, slots: t.slots.map(s => ({ label: s.label, category: s.category, x: s.x, y: s.y })) };
+        renderModal();
+      };
+      const deleteTacticBtn = document.getElementById('delete-tactic-btn');
+      if (deleteTacticBtn) deleteTacticBtn.onclick = () => {
+        const t = currentTactic();
+        if (!t) return;
+        state.confirmModal = {
+          title: 'Apagar tática',
+          message: `Vais apagar a tática <strong>${esc(t.name)}</strong> desta época. Esta ação não pode ser desfeita.`,
+          confirmLabel: 'Apagar tática',
+          onConfirm: () => deleteTactic(t.id)
+        };
+        renderModal();
+      };
+
+      document.querySelectorAll('.edit-player').forEach(btn => btn.onclick = () => openEditPlayer(btn.dataset.playerId));
+      document.querySelectorAll('.delete-player').forEach(btn => btn.onclick = () => requestDeletePlayer(btn.dataset.playerId));
+      document.querySelectorAll('.board-select').forEach(sel => sel.onchange = () => updateFieldForPlayer(sel.dataset.playerId, sel.dataset.field, sel.value));
+
+      const filterRegion = document.getElementById('filter-region');
+      if (filterRegion) filterRegion.onchange = e => { state.filterRegion = e.target.value; render(); };
+      const newScout = document.getElementById('new-scout-btn');
+      if (newScout) newScout.onclick = openCreateScout;
+      document.querySelectorAll('.edit-scout').forEach(btn => btn.onclick = () => openEditScout(btn.dataset.scoutId));
+      document.querySelectorAll('.delete-scout').forEach(btn => btn.onclick = () => requestDeleteScout(btn.dataset.scoutId));
+      document.querySelectorAll('.scout-region-select').forEach(sel => sel.onchange = () => {
+        const s = state.scouts.find(x => x.id === sel.dataset.scoutId);
+        if (!s) return;
+        s.region = sel.value;
+        persistScouts();
+        render();
+      });
+      const filterRecruitPos = document.getElementById('filter-recruit-pos');
+      if (filterRecruitPos) filterRecruitPos.onchange = e => { state.filterRecruitPos = e.target.value; render(); };
+      const newRecruit = document.getElementById('new-recruit-btn');
+      if (newRecruit) newRecruit.onclick = openCreateRecruit;
+      document.querySelectorAll('.edit-recruit').forEach(btn => btn.onclick = () => openEditRecruit(btn.dataset.recruitId));
+      document.querySelectorAll('.delete-recruit').forEach(btn => btn.onclick = () => requestDeleteRecruit(btn.dataset.recruitId));
+      document.querySelectorAll('.inline-edit').forEach(btn => btn.onclick = () => {
+        const field = btn.dataset.inlineField;
+        const playerId = btn.dataset.playerId;
+        const current = btn.dataset.value || '';
+        if (btn.dataset.inlineType === 'select') {
+          const options = field === 'squadStatus' ? activeSquadStatuses() : SEASON_ROLES;
+          const next = prompt('Escolhe: ' + options.join(' | '), current);
+          if (next && options.includes(next)) updateFieldForPlayer(playerId, field, next);
+          return;
+        }
+        const hint = field === 'age' ? 'Novo valor' : 'Novo valor (0 a 5, passo 0.5 para CA/PA)';
+        const next = prompt(hint, current);
+        if (next === null || next === '') return;
+        updateFieldForPlayer(playerId, field, next);
+      });
+      document.querySelectorAll('[data-slot-pick]').forEach(btn => btn.onclick = () => { const t = currentTactic(); if (!t) return; state.slotPicker = { tacticId: t.id, slotId: btn.dataset.slotPick, team: btn.dataset.slotTeam || 'main' }; renderModal(); });
+      document.querySelectorAll('[data-slot-clear]').forEach(btn => btn.onclick = () => { const t = currentTactic(); if (!t) return; assignPlayerToSlot(t.id, btn.dataset.slotClear, null, btn.dataset.slotTeam || 'main'); });
+
+      const cvProfileSelect = document.getElementById('cv-profile-select');
+      if (cvProfileSelect) cvProfileSelect.onchange = e => switchComparisonProfile(e.target.value);
+      const cvNewProfile = document.getElementById('cv-new-profile');
+      if (cvNewProfile) cvNewProfile.onclick = createComparisonProfile;
+      const cvDeleteProfile = document.getElementById('cv-delete-profile');
+      if (cvDeleteProfile) cvDeleteProfile.onclick = deleteComparisonProfile;
+      const cvImportPhotoBtn = document.getElementById('cv-import-photo-btn');
+      if (cvImportPhotoBtn) cvImportPhotoBtn.onclick = () => {
+        state.comparisonPhotoModal = { file: null, previewUrl: null };
+        attachComparisonPasteListener();
+        renderModal();
+      };
+      const cvAddAttr = document.getElementById('cv-add-attr');
+      if (cvAddAttr) cvAddAttr.onclick = addComparisonAttribute;
+      document.querySelectorAll('[data-remove-attr]').forEach(btn => btn.onclick = () => removeComparisonAttribute(btn.dataset.removeAttr));
+      document.querySelectorAll('[data-cv-label]').forEach(inp => inp.oninput = () => updateComparisonLabel(inp.dataset.cvLabel, inp.value));
+      document.querySelectorAll('[data-cv-a]').forEach(inp => inp.oninput = () => updateComparisonValue(inp.dataset.cvA, 'a', inp.value));
+      document.querySelectorAll('[data-cv-b]').forEach(inp => inp.oninput = () => updateComparisonValue(inp.dataset.cvB, 'b', inp.value));
+      document.querySelectorAll('[data-cv-mult]').forEach(inp => inp.oninput = () => updateComparisonMultiplier(inp.dataset.cvMult, inp.value));
+    }
+
+    function renderModal() {
+      const root = document.getElementById('modal-root');
+      root.innerHTML = '';
+      if (state.playerModal) return renderPlayerModal(root);
+      if (state.deleteModal) return renderDeleteModal(root);
+      if (state.seasonModal) return renderSeasonModal(root);
+      if (state.tacticModal) return renderTacticModal(root);
+      if (state.confirmModal) return renderConfirmModal(root);
+      if (state.scoutModal) return renderScoutModal(root);
+      if (state.recruitModal) return renderRecruitModal(root);
+      if (state.slotPicker) return renderSlotPickerModal(root);
+      if (state.remainingModal) return renderRemainingModal(root);
+      if (state.comparisonPhotoModal) return renderComparisonPhotoModal(root);
+      if (state.importModal) return renderImportModal(root);
+    }
+
+    function modalShell(title, width='760px', bodyHtml='') {
+      return `<div class="modal-overlay" id="modal-overlay"><div class="modal" style="width:min(${width},100%)"><div class="modal-head"><h3 class="modal-title">${title}</h3><button class="icon-btn" id="modal-close">${icon('close')}</button></div><div class="modal-body">${bodyHtml}</div></div></div>`;
+    }
+
+    function attachModalClose(root, onClose) {
+      root.querySelector('#modal-overlay').onclick = e => { if (e.target.id === 'modal-overlay') onClose(); };
+      root.querySelector('#modal-close').onclick = onClose;
+    }
+
+    function renderPlayerModal(root) {
+      const m = state.playerModal;
+      root.innerHTML = modalShell(m.mode === 'create' ? 'Novo jogador' : 'Editar jogador', '680px', `
+        <div class="form-grid">
+          <div class="field"><label>Nome</label><input class="input" id="pm-name" value="${esc(m.player.name)}" autofocus /></div>
+          <div class="field"><label>Posição principal</label><select class="select" id="pm-main">${CATEGORY_KEYS.map(k => `<option value="${k}" ${m.player.mainPosition===k?'selected':''}>${POSITION_CATEGORIES[k].label}</option>`).join('')}</select></div>
+          <div class="field"><label>Idade</label><input type="number" class="input" id="pm-age" value="${esc(m.stats.age)}" /></div>
+          <div class="field"><label>Capacidade (CA)</label><input type="number" step="0.5" class="input" id="pm-ca" min="0" max="5" step="0.5" value="${esc(clampRating(m.stats.ca))}" /></div>
+          <div class="field"><label>Potencial (PA)</label><input type="number" step="0.5" class="input" id="pm-pa" min="0" max="5" step="0.5" value="${esc(clampRating(m.stats.pa))}" /></div>
+          <div class="field"><label>Preço / Valor (M)</label><input type="number" step="0.1" class="input" id="pm-value" value="${esc(m.stats.value)}" /></div>
+          <div class="field"><label>RH (Real Hability, opcional)</label><input type="number" step="0.1" class="input" id="pm-rh" value="${esc(m.stats.rh ?? '')}" placeholder="—" /></div>
+          <div class="field"><label>Estado do plantel</label><select class="select" id="pm-status">${activeSquadStatuses().map(s => `<option value="${esc(s)}" ${activeStatusValue(m.stats)===s?'selected':''}>${esc(s)}</option>`).join('')}</select></div>
+          <div class="field"><label>Papel da época</label><select class="select" id="pm-role">${SEASON_ROLES.map(s => `<option value="${esc(s)}" ${m.stats.seasonRole===s?'selected':''}>${esc(s)}</option>`).join('')}</select></div>
+          <div class="field field-wide"><label>Posições secundárias</label><div class="chip-row" id="pm-secondary">${CATEGORY_KEYS.filter(k => k !== m.player.mainPosition).map(k => `<button type="button" class="chip-btn ${m.player.secondaryPositions.includes(k)?'active':''}" data-secondary="${k}">${k}</button>`).join('')}</div></div>
+          <div class="field field-wide"><label>Notas</label><textarea class="textarea" id="pm-notes">${esc(m.player.notes || '')}</textarea></div>
+        </div>
+        <div class="modal-footer"><button class="btn btn-ghost" id="pm-cancel">Cancelar</button><button class="btn btn-primary" id="pm-save">${icon('plus')} Guardar</button></div>
+      `);
+      attachModalClose(root, () => { state.playerModal = null; renderModal(); });
+      root.querySelector('#pm-cancel').onclick = () => { state.playerModal = null; renderModal(); };
+      root.querySelector('#pm-save').onclick = () => {
+        const player = state.playerModal.player;
+        const stats = state.playerModal.stats;
+        player.name = root.querySelector('#pm-name').value.trim();
+        player.mainPosition = root.querySelector('#pm-main').value;
+        player.notes = root.querySelector('#pm-notes').value;
+        stats.age = Number(root.querySelector('#pm-age').value || 0);
+        stats.ca = clampRating(root.querySelector('#pm-ca').value || 0);
+        stats.pa = clampRating(root.querySelector('#pm-pa').value || 0);
+        stats.value = clampMoney(root.querySelector('#pm-value').value || 0);
+        const rhRaw = root.querySelector('#pm-rh').value;
+        stats.rh = rhRaw === '' ? undefined : Number(rhRaw);
+        stats[activeStatusField()] = root.querySelector('#pm-status').value;
+        stats.seasonRole = root.querySelector('#pm-role').value;
+        stats.isNew = state.playerModal.mode === 'create' ? true : !!stats.isNew;
+        savePlayerFromModal();
+      };
+      root.querySelector('#pm-main').onchange = e => {
+        const player = state.playerModal.player;
+        const stats = state.playerModal.stats;
+        player.name = root.querySelector('#pm-name').value;
+        player.notes = root.querySelector('#pm-notes').value;
+        stats.age = root.querySelector('#pm-age').value;
+        stats.ca = root.querySelector('#pm-ca').value;
+        stats.pa = root.querySelector('#pm-pa').value;
+        stats.value = root.querySelector('#pm-value').value;
+        stats.rh = root.querySelector('#pm-rh').value;
+        stats[activeStatusField()] = root.querySelector('#pm-status').value;
+        stats.seasonRole = root.querySelector('#pm-role').value;
+        player.mainPosition = e.target.value;
+        player.secondaryPositions = player.secondaryPositions.filter(p => p !== e.target.value);
+        renderPlayerModal(root);
+      };
+      root.querySelectorAll('[data-secondary]').forEach(btn => btn.onclick = () => {
+        const key = btn.dataset.secondary;
+        const arr = state.playerModal.player.secondaryPositions;
+        const idx = arr.indexOf(key);
+        if (idx >= 0) arr.splice(idx,1); else arr.push(key);
+        btn.classList.toggle('active');
+      });
+    }
+
+    function renderDeleteModal(root) {
+      const p = state.players.find(x => x.id === state.deleteModal.playerId);
+      const usedElsewhere = Object.keys(state.statsBySeason).filter(sid => sid !== state.currentSeasonId && state.statsBySeason[sid]?.[p.id]).length > 0;
+      root.innerHTML = modalShell('Apagar jogador', '460px', `
+        <p class="muted" style="line-height:1.6;">Vais apagar <strong>${esc(p.name)}</strong>. ${usedElsewhere ? 'Este jogador existe noutras épocas/táticas.' : 'Este jogador só existe nesta época.'}</p>
+        <div class="modal-footer" style="justify-content:stretch;flex-direction:column;align-items:stretch;">
+          <button class="btn btn-ghost" id="del-season">Remover apenas desta época/tática</button>
+          <button class="btn btn-danger" id="del-all">Apagar definitivamente todas as épocas</button>
+          <button class="btn btn-ghost" id="del-cancel">Cancelar</button>
+        </div>
+      `);
+      attachModalClose(root, () => { state.deleteModal = null; renderModal(); });
+      root.querySelector('#del-season').onclick = () => confirmDelete('season');
+      root.querySelector('#del-all').onclick = () => confirmDelete('all');
+      root.querySelector('#del-cancel').onclick = () => { state.deleteModal = null; renderModal(); };
+    }
+
+    function renderConfirmModal(root) {
+      const c = state.confirmModal;
+      root.innerHTML = modalShell(c.title, '440px', `
+        <p class="muted" style="line-height:1.6;">${c.message}</p>
+        <div class="modal-footer">
+          <button class="btn btn-ghost" id="confirm-cancel">Cancelar</button>
+          <button class="btn btn-danger" id="confirm-ok">${c.confirmLabel}</button>
+        </div>
+      `);
+      attachModalClose(root, () => { state.confirmModal = null; renderModal(); });
+      root.querySelector('#confirm-cancel').onclick = () => { state.confirmModal = null; renderModal(); };
+      root.querySelector('#confirm-ok').onclick = () => {
+        const action = c.onConfirm;
+        state.confirmModal = null;
+        action();
+      };
+    }
+
+    function renderSeasonModal(root) {
+      const last = state.seasons[state.seasons.length - 1]?.label || '25-26';
+      const guess = guessSeasonLabel(last);
+      root.innerHTML = modalShell('Nova época', '420px', `
+        <p class="muted">O plantel e as táticas atuais são herdados; as idades sobem +1 ano.</p>
+        <div class="field"><label>Etiqueta da época</label><input class="input" id="season-label" value="${esc(guess)}" autofocus /></div>
+        <div class="modal-footer"><button class="btn btn-ghost" id="season-cancel">Cancelar</button><button class="btn btn-primary" id="season-create">Criar época</button></div>
+      `);
+      attachModalClose(root, () => { state.seasonModal = false; renderModal(); });
+      root.querySelector('#season-cancel').onclick = () => { state.seasonModal = false; renderModal(); };
+      root.querySelector('#season-create').onclick = () => {
+        const label = root.querySelector('#season-label').value.trim();
+        if (label) createSeason(label);
+      };
+    }
+
+    function guessSeasonLabel(lastLabel) {
+      const m = String(lastLabel || '').match(/(\d+)\D+(\d+)/);
+      if (!m) return '';
+      const a = String(Number(m[1]) + 1).padStart(2,'0');
+      const b = String(Number(m[2]) + 1).padStart(2,'0');
+      return a + '-' + b;
+    }
+
+    function renderTacticModal(root) {
+      const m = state.tacticModal;
+      if (m.mode === 'choose') {
+        root.innerHTML = modalShell('Nova tática', '520px', `
+          <p class="muted">Escolhe um esquema predefinido com 11 posições ou cria uma tática personalizada.</p>
+          ${Object.keys(FORMATIONS).map(k => `<button class="formation-btn" data-formation="${k}"><span>${k}</span><span class="faint">${FORMATIONS[k].slots.length} posições</span></button>`).join('')}
+          <button class="formation-btn" id="custom-mode" style="border-style:dashed;"><span>Tática personalizada</span><span class="faint">11 slots manuais</span></button>
+          <div class="modal-footer"><button class="btn btn-ghost" id="tactic-close">Cancelar</button></div>
+        `);
+        attachModalClose(root, () => { state.tacticModal = null; renderModal(); });
+        root.querySelector('#tactic-close').onclick = () => { state.tacticModal = null; renderModal(); };
+        root.querySelectorAll('[data-formation]').forEach(btn => btn.onclick = () => {
+          state.tacticModal = { mode: 'preset', presetKey: btn.dataset.formation, customName: FORMATIONS[btn.dataset.formation].name, slots: [] };
+          renderTacticModal(root);
+        });
+        root.querySelector('#custom-mode').onclick = () => {
+          state.tacticModal = { mode: 'custom', presetKey: '4-4-2', customName: '', slots: Array.from({length:11}, () => ({ label:'', category:'MC' })) };
+          renderTacticModal(root);
+        };
+        return;
+      }
+      if (m.mode === 'preset') {
+        root.innerHTML = modalShell('Nova tática · ' + m.presetKey, '500px', `
+          <div class="field"><label>Nome da tática</label><input class="input" id="tactic-name" value="${esc(m.customName)}" autofocus /></div>
+          <div class="muted" style="margin:14px 0 8px;">Posições: ${FORMATIONS[m.presetKey].slots.length}/11</div>
+          <ul class="preset-list">${FORMATIONS[m.presetKey].slots.map(s => `<li>${esc(s.label)}</li>`).join('')}</ul>
+          <div class="modal-footer"><button class="btn btn-ghost" id="preset-back">Voltar</button><button class="btn btn-primary" id="preset-create">Criar tática</button></div>
+        `);
+        attachModalClose(root, () => { state.tacticModal = null; renderModal(); });
+        root.querySelector('#preset-back').onclick = () => { state.tacticModal.mode = 'choose'; renderTacticModal(root); };
+        root.querySelector('#preset-create').onclick = () => createTacticFromFormation(m.presetKey, root.querySelector('#tactic-name').value.trim());
+        return;
+      }
+      const isEdit = m.mode === 'edit';
+      root.innerHTML = modalShell(isEdit ? ('Editar tática · ' + (m.customName || '')) : 'Tática personalizada · 11 posições', '720px', `
+        <div class="field"><label>Nome da tática</label><input class="input" id="custom-tactic-name" value="${esc(m.customName || '')}" placeholder="Ex. 5-2-2-1" autofocus /></div>
+        <div class="muted" style="margin:10px 0;">${m.slots.filter(s => s.label.trim()).length}/11 posições nomeadas</div>
+        <div class="custom-slot-grid">
+          ${m.slots.map((s, i) => `<div class="custom-slot-row" style="grid-template-columns:26px 1fr 150px 82px 82px;"><span class="faint">${i+1}</span><input class="input custom-slot-label" data-index="${i}" value="${esc(s.label)}" placeholder="Nome da posição" /><select class="select custom-slot-category" data-index="${i}">${CATEGORY_KEYS.map(k => `<option value="${k}" ${s.category===k?'selected':''}>${POSITION_CATEGORIES[k].label}</option>`).join('')}</select><input class="input custom-slot-x" data-index="${i}" type="number" min="0" max="100" value="${esc(s.x ?? inferSlotCoords('custom', i, s).x)}" placeholder="X" /><input class="input custom-slot-y" data-index="${i}" type="number" min="0" max="100" value="${esc(s.y ?? inferSlotCoords('custom', i, s).y)}" placeholder="Y" /></div>`).join('')}
+        </div>
+        <div class="modal-footer"><button class="btn btn-ghost" id="custom-back">${isEdit ? 'Cancelar' : 'Voltar'}</button><button class="btn btn-primary" id="custom-create">${isEdit ? 'Guardar alterações' : 'Criar tática'}</button></div>
+      `);
+      attachModalClose(root, () => { state.tacticModal = null; renderModal(); });
+      root.querySelector('#custom-back').onclick = () => {
+        if (isEdit) { state.tacticModal = null; renderModal(); }
+        else { state.tacticModal.mode = 'choose'; renderTacticModal(root); }
+      };
+      root.querySelector('#custom-create').onclick = () => {
+        const slots = Array.from(root.querySelectorAll('.custom-slot-label')).map((input, idx) => ({ label: input.value.trim(), category: root.querySelector('.custom-slot-category[data-index="'+idx+'"]').value, x: Math.max(0, Math.min(100, Number(root.querySelector('.custom-slot-x[data-index="'+idx+'"]').value || inferSlotCoords('custom', idx, {}).x))), y: Math.max(0, Math.min(100, Number(root.querySelector('.custom-slot-y[data-index="'+idx+'"]').value || inferSlotCoords('custom', idx, {}).y))) }));
+        if (isEdit) updateTacticFromModal(m.tacticId, root.querySelector('#custom-tactic-name').value.trim(), slots);
+        else createCustomTactic(root.querySelector('#custom-tactic-name').value.trim(), slots);
+      };
+    }
+
+    function renderSlotPickerModal(root) {
+      const t = currentTactic();
+      const slotData = t?.slots.find(s => s.id === state.slotPicker.slotId);
+      const team = state.slotPicker.team || 'main';
+      if (!slotData) return;
+      const players = seasonPlayersEligible();
+      const usedMain = new Set(Object.values(t.assignments || {}).filter(Boolean));
+      const usedReserve = new Set(Object.values(t.reserveAssignments || {}).filter(Boolean));
+      const usedAll = new Set([...usedMain, ...usedReserve]);
+      const currentSlotPlayer = (team === 'reserve' ? (t.reserveAssignments || {}) : (t.assignments || {}))[state.slotPicker.slotId];
+      const available = players.filter(p => !usedAll.has(p.id) || p.id === currentSlotPlayer);
+      const compatible = available.filter(p => p.mainPosition === slotData.category || (p.secondaryPositions || []).includes(slotData.category));
+      const others = available.filter(p => !compatible.includes(p));
+      root.innerHTML = modalShell('Escalar · ' + slotData.label + ' · ' + (team === 'reserve' ? 'Suplentes' : 'Titulares'), '460px', `
+        ${compatible.length ? `<div class="picker-label">Compatíveis</div><div class="picker-list">${compatible.map(p => pickerRow(p)).join('')}</div>` : ''}
+        <div class="picker-label">Outros jogadores</div>
+        <div class="picker-list">${others.length ? others.map(p => pickerRow(p)).join('') : '<div class="faint">Sem jogadores nesta época.</div>'}</div>
+      `);
+      attachModalClose(root, () => { state.slotPicker = null; renderModal(); });
+      root.querySelectorAll('[data-pick-player]').forEach(btn => btn.onclick = () => assignPlayerToSlot(state.slotPicker.tacticId, state.slotPicker.slotId, btn.dataset.pickPlayer, state.slotPicker.team || 'main'));
+    }
+
+    function pickerRow(p) {
+      return `<button class="picker-row" data-pick-player="${p.id}"><span>${esc(p.name)}</span><span class="faint">${esc(POSITION_CATEGORIES[p.mainPosition]?.label || p.mainPosition)}</span></button>`;
+    }
+
+    function renderRemainingModal(root) {
+      const t = currentTactic();
+      const eligible = seasonPlayersEligible();
+      const usedMain = new Set(Object.values((t && t.assignments) || {}).filter(Boolean));
+      const usedReserve = new Set(Object.values((t && t.reserveAssignments) || {}).filter(Boolean));
+      const remaining = eligible.filter(p => !usedMain.has(p.id) && !usedReserve.has(p.id));
+      const groups = CATEGORY_KEYS.map(k => ({ key: k, label: POSITION_CATEGORIES[k].label, players: remaining.filter(p => p.mainPosition === k) })).filter(g => g.players.length);
+      root.innerHTML = modalShell('Restantes' + (t ? ' · ' + esc(t.name) : ''), '520px', `
+        <div class="muted" style="margin-bottom:12px;line-height:1.6;">Jogadores do Plantel da Época que ainda não estão nem em titulares nem em suplentes desta tática.</div>
+        ${!groups.length ? `<div class="faint">Não há jogadores restantes — todos já estão escalados, ou não há jogadores elegíveis nesta época.</div>` : groups.map(g => `
+          <div style="margin-bottom:14px;">
+            <div style="font-size:12px;text-transform:uppercase;letter-spacing:.05em;color:var(--muted);margin-bottom:6px;">${esc(g.label)} <span class="faint">(${g.players.length})</span></div>
+            <div class="picker-list">${g.players.map(p => `<div class="picker-row" style="cursor:default;"><span>${esc(p.name)}</span></div>`).join('')}</div>
+          </div>
+        `).join('')}
+      `);
+      attachModalClose(root, () => { state.remainingModal = false; renderModal(); });
+    }
+
+
+    function renderImportModal(root) {
+      const m = state.importModal;
+      root.innerHTML = modalShell('Importar jogadores do CSV', '860px', `
+        <p class="muted" style="margin-top:0;line-height:1.6;">Carrega um ficheiro CSV com colunas Nome, Posição, Preço, Idade, CA, PA (por qualquer ordem, com cabeçalho). CA e PA numa escala de 0–200 são convertidos automaticamente para a escala interna de 0–5. Revê e corrige tudo antes de guardar.</p>
+        ${m.status === 'idle' ? `
+          <div style="border:1px dashed var(--line);border-radius:16px;padding:30px;text-align:center;background:rgba(255,255,255,0.02);">
+            <div style="font-size:28px;margin-bottom:8px;">⇪</div>
+            <div class="muted" style="margin-bottom:14px;">Escolhe o ficheiro CSV exportado do FM.</div>
+            <input type="file" id="import-file" accept=".csv,text/csv,text/plain" class="hidden" />
+            <button class="btn btn-primary" id="import-pick-file">Escolher CSV</button>
+          </div>
+        ` : ''}
+        ${m.status === 'loading' ? `
+          <div class="empty" style="min-height:180px;"><div><div style="font-size:26px;margin-bottom:8px;">⏳</div><div>A ler o CSV…</div></div></div>
+        ` : ''}
+        ${m.status === 'error' ? `
+          <div class="empty" style="min-height:180px;"><div><div style="font-size:26px;margin-bottom:8px;color:var(--red);">⚠</div><div style="margin-bottom:8px;">${esc(m.errorMsg || 'Não foi possível ler este CSV.')}</div><div class="faint">Confirma que o ficheiro tem colunas Nome, Posição, Preço, Idade, CA, PA.</div><div style="margin-top:14px;"><button class="btn btn-ghost" id="import-retry">Tentar novamente</button></div></div></div>
+        ` : ''}
+        ${m.status === 'preview' ? `
+          <div>
+            <div class="muted" style="margin-bottom:6px;">Ficheiro: ${esc(m.fileName || '')} · ${m.rows.length} linha(s) reconhecida(s)</div>
+            ${(m.warnings && m.warnings.length) ? `<div style="border:1px solid var(--amber-2);background:rgba(212,200,106,0.08);border-radius:10px;padding:10px 12px;margin-bottom:12px;color:var(--amber);font-size:12.5px;line-height:1.6;">${m.warnings.map(w => esc(w)).join('<br/>')}</div>` : ''}
+            <div class="muted" style="margin-bottom:10px;">Confirma e corrige os valores antes de guardar. Quando um jogador já existente é reconhecido pelo nome, os dados dele são atualizados em vez de criar um duplicado; em caso de ambiguidade, escolhe manualmente na coluna Match.</div>
+            <div class="table-wrap" style="max-height:460px;">
+              <table class="import-table">
+                <thead><tr><th>Nome</th><th>Idade</th><th>Posição</th><th>CA</th><th>PA</th><th>€ (M)</th><th>Match</th></tr></thead>
+                <tbody>
+                  ${m.rows.map((r, i) => `
+                    <tr>
+                      <td><input class="input import-name" data-index="${i}" value="${esc(r.name || '')}" /></td>
+                      <td><input type="number" class="input import-age" data-index="${i}" value="${esc(r.age ?? '')}" /></td>
+                      <td><select class="select import-pos" data-index="${i}">${CATEGORY_KEYS.map(k => `<option value="${k}" ${r.position===k?'selected':''}>${POSITION_CATEGORIES[k].label}</option>`).join('')}</select></td>
+                      <td><input type="number" step="0.5" min="0" max="5" class="input import-ca" data-index="${i}" value="${esc(r.ca ?? '')}" /></td>
+                      <td><input type="number" step="0.5" min="0" max="5" class="input import-pa" data-index="${i}" value="${esc(r.pa ?? '')}" /></td>
+                      <td><input type="number" step="0.1" class="input import-value" data-index="${i}" value="${esc(r.value ?? '')}" /></td>
+                      <td>${renderImportMatchSelect(r, i)}</td>
+                    </tr>
+                  `).join('')}
+                </tbody>
+              </table>
+            </div>
+            <div class="modal-footer">
+              <button class="btn btn-ghost" id="import-another">Outro ficheiro</button>
+              <button class="btn btn-primary" id="import-save">Guardar ${m.rows.length} jogador(es)</button>
+            </div>
+          </div>
+        ` : ''}
+      `);
+      attachModalClose(root, () => { state.importModal = null; renderModal(); });
+      const pickBtn = root.querySelector('#import-pick-file');
+      const fileInput = root.querySelector('#import-file');
+      if (pickBtn && fileInput) {
+        pickBtn.onclick = () => fileInput.click();
+        fileInput.onchange = async e => {
+          const file = e.target.files && e.target.files[0];
+          if (!file) return;
+          await handleImportFile(file, root);
+        };
+      }
+      const retry = root.querySelector('#import-retry');
+      if (retry) retry.onclick = () => { state.importModal = { status:'idle', rows: [], fileName: '', warnings: [] }; renderImportModal(root); };
+      const another = root.querySelector('#import-another');
+      if (another) another.onclick = () => { state.importModal = { status:'idle', rows: [], fileName: '', warnings: [] }; renderImportModal(root); };
+      const save = root.querySelector('#import-save');
+      if (save) save.onclick = () => saveImportedRows(root);
+    }
+
+    function renderImportMatchSelect(row, index) {
+      const candidates = row.candidates || [];
+      if (!candidates.length) {
+        return `<span class="pill" style="color:var(--muted);">Novo jogador</span>`;
+      }
+      const isUniqueAutoMatch = candidates.length === 1 && row.matchedPlayerId === candidates[0].id;
+      const statusBadge = isUniqueAutoMatch
+        ? `<div class="faint" style="color:var(--green);margin-bottom:4px;">✓ Reconhecido</div>`
+        : `<div class="faint" style="color:var(--amber);margin-bottom:4px;">${candidates.length > 1 ? '⚠ Ambíguo — escolhe' : 'Confirma'}</div>`;
+      return `<div>${statusBadge}<select class="select import-match" data-index="${index}"><option value="">Criar novo jogador</option>${candidates.map(c => `<option value="${c.id}" ${row.matchedPlayerId===c.id?'selected':''}>Usar existente: ${esc(c.name)}</option>`).join('')}</select></div>`;
+    }
+
+    async function handleImportFile(file, root) {
+      state.importModal = { ...state.importModal, status:'loading', rows: [], fileName: file.name, warnings: [] };
+      renderImportModal(root);
+      try {
+        const text = await fileToText(file);
+        const { rows, warnings } = parseCsvText(text);
+        if (!rows.length) throw new Error('Sem jogadores reconhecidos no CSV. Confirma as colunas Nome, Posição, Preço, Idade, CA, PA.');
+        const withMatches = rows.map(r => {
+          const candidates = findExistingPlayerMatches(r.name || '');
+          return { ...r, candidates, matchedPlayerId: candidates.length === 1 ? candidates[0].id : '' };
+        });
+        state.importModal = { status:'preview', rows: withMatches, warnings, fileName: file.name };
+        renderImportModal(root);
+        bindImportPreviewEvents(root);
+      } catch (e) {
+        console.error(e);
+        state.importModal = { status:'error', rows: [], fileName: file.name, warnings: [], errorMsg: e && e.message ? e.message : 'Não foi possível ler este CSV.' };
+        renderImportModal(root);
+      }
+    }
+
+    function bindImportPreviewEvents(root) {
+      root.querySelectorAll('.import-name').forEach(el => el.oninput = () => state.importModal.rows[Number(el.dataset.index)].name = el.value);
+      root.querySelectorAll('.import-age').forEach(el => el.oninput = () => state.importModal.rows[Number(el.dataset.index)].age = el.value === '' ? null : Number(el.value));
+      root.querySelectorAll('.import-pos').forEach(el => el.onchange = () => state.importModal.rows[Number(el.dataset.index)].position = el.value);
+      root.querySelectorAll('.import-ca').forEach(el => el.oninput = () => state.importModal.rows[Number(el.dataset.index)].ca = el.value === '' ? null : Number(el.value));
+      root.querySelectorAll('.import-pa').forEach(el => el.oninput = () => state.importModal.rows[Number(el.dataset.index)].pa = el.value === '' ? null : Number(el.value));
+      root.querySelectorAll('.import-value').forEach(el => el.oninput = () => state.importModal.rows[Number(el.dataset.index)].value = el.value === '' ? null : Number(el.value));
+      root.querySelectorAll('.import-match').forEach(el => el.onchange = () => state.importModal.rows[Number(el.dataset.index)].matchedPlayerId = el.value);
+    }
+
+    function saveImportedRows(root) {
+      const rows = (state.importModal?.rows || []).filter(r => String(r.name || '').trim());
+      state.statsBySeason[state.currentSeasonId] = state.statsBySeason[state.currentSeasonId] || {};
+      rows.forEach(row => {
+        const matchId = row.matchedPlayerId || '';
+        const playerId = matchId || uid();
+        if (!matchId) {
+          state.players.push({ id: playerId, name: row.name.trim(), type: 'real', mainPosition: row.position || 'DC', secondaryPositions: [], notes: '' });
+        } else {
+          const existing = state.players.find(p => p.id === matchId);
+          if (existing) {
+            existing.name = row.name.trim() || existing.name;
+            existing.mainPosition = row.position || existing.mainPosition;
+          }
+        }
+        const previousSeasonStats = state.statsBySeason[state.currentSeasonId][playerId] || {};
+        state.statsBySeason[state.currentSeasonId][playerId] = {
+          age: row.age ?? previousSeasonStats.age ?? 20,
+          ca: clampRating(row.ca ?? previousSeasonStats.ca ?? 1),
+          pa: clampRating(row.pa ?? previousSeasonStats.pa ?? 1),
+          value: clampMoney(row.value ?? previousSeasonStats.value ?? 0),
+          squadStatus: previousSeasonStats.squadStatus ?? 'Fica',
+          clStatus: previousSeasonStats.clStatus ?? 'Não Inscrito',
+          seasonRole: previousSeasonStats.seasonRole ?? 'Restantes',
+          isNew: !matchId
+        };
+      });
+      Object.keys(state.statsBySeason).forEach(sid => {
+        Object.keys(state.statsBySeason[sid] || {}).forEach(pid => {
+          const s = state.statsBySeason[sid][pid] || {};
+          s.ca = clampRating(s.ca);
+          s.pa = clampRating(s.pa);
+          s.value = clampMoney(s.value);
+          s.squadStatus = normalizeLegacyValue('squadStatus', s.squadStatus);
+          s.seasonRole = normalizeLegacyValue('seasonRole', s.seasonRole);
+          state.statsBySeason[sid][pid] = s;
+        });
+      });
+      persistAll();
+      const count = rows.length;
+      state.importModal = null;
+      render();
+      showToast(count + ' jogador(es) importado(s).');
+    }
+
+    function fileToText(file) {
+      return new Promise((resolve, reject) => {
+        const r = new FileReader();
+        r.onload = () => resolve(String(r.result || ''));
+        r.onerror = () => reject(new Error('Falha a ler o ficheiro.'));
+        r.readAsText(file, 'UTF-8');
+      });
+    }
+
+    // ---- Mapeamento de posições FM -> categorias internas da app ----
+    // Chaves internas: GR, DC, DD, DE, MDC, MC, ED, EE, PL
+    const FM_POSITION_MAP = [
+      [['GK'], 'GR'],
+      [['DEF EC', 'DEF E'], 'DE'],
+      [['DEF D'], 'DD'],
+      [['MD'], 'MDC'],
+      [['MC'], 'MC'],
+      [['MA DEC', 'MA DE', 'MA E'], 'EE'],
+      [['MA DDC', 'MA DC', 'MA D'], 'ED'],
+      [['AVC', 'PL'], 'PL']
+    ];
+    // Ordenar por comprimento de código descendente para evitar que "MA D" capture "MA DC"/"MA DEC" primeiro.
+    const FM_POSITION_LOOKUP = FM_POSITION_MAP
+      .flatMap(([codes, cat]) => codes.map(code => ({ code, cat })))
+      .sort((a, b) => b.code.length - a.code.length);
+
+    function normalizeToken(text) {
+      return String(text || '')
+        .toUpperCase()
+        .normalize('NFD').replace(/[\u0300-\u036f]/g, '')
+        .replace(/[^A-Z0-9 ]/g, ' ')
+        .replace(/\s+/g, ' ')
+        .trim();
+    }
+
+    // Nomes completos (como aparecem na app) mapeados diretamente para a categoria interna.
+    // Isto tem prioridade sobre qualquer heurística de código curto, para nunca cair em
+    // Defesa Central só porque a posição veio escrita por extenso.
+    const FULL_LABEL_MAP = Object.keys(POSITION_CATEGORIES).reduce((acc, key) => {
+      acc[normalizeToken(POSITION_CATEGORIES[key].label)] = key;
+      return acc;
+    }, {});
+    // Variantes adicionais comuns (com/sem hífen, grafias alternativas) — normalizeToken já
+    // remove acentos e pontuação, por isso cada variante só precisa de existir uma vez aqui.
+    Object.assign(FULL_LABEL_MAP, {
+      'GUARDA REDES': 'GR',
+      'GUARDA REDE': 'GR',
+      'DEFESA CENTRAL': 'DC',
+      'DEFESA CENTRO': 'DC',
+      'DEFESA DIREITO': 'DD',
+      'DEFESA DIREITA': 'DD',
+      'DEFESA ESQUERDO': 'DE',
+      'DEFESA ESQUERDA': 'DE',
+      'MEDIO DEFENSIVO': 'MDC',
+      'MEDIO CENTRO': 'MC',
+      'EXTREMO DIREITO': 'ED',
+      'EXTREMO ESQUERDO': 'EE',
+      'PONTA DE LANCA': 'PL'
+    });
+
+    function normalizePositionCode(text) {
+      const t = normalizeToken(text);
+      if (!t) return 'DC';
+      if (CATEGORY_KEYS.includes(t)) return t;
+      // 1) nome completo (a forma que a própria app usa, ou variante comum) — máxima prioridade
+      if (FULL_LABEL_MAP[t]) return FULL_LABEL_MAP[t];
+      // 2) match exato contra os códigos da FM (lista acima)
+      const exact = FM_POSITION_LOOKUP.find(e => e.code === t);
+      if (exact) return exact.cat;
+      // 3) match por "contém", do código mais específico para o mais genérico
+      const contains = FM_POSITION_LOOKUP.find(e => t.includes(e.code));
+      if (contains) return contains.cat;
+
+      if (/\bGR\b/.test(t)) return 'GR';
+
+      // 4) heurísticas de código curto — só se aplicam a texto realmente curto (códigos FM),
+      // nunca a frases completas, para não confundir palavras comuns (ex. "de") com códigos.
+      const isShortCode = t.length <= 10 && t.split(' ').length <= 3;
+      if (isShortCode) {
+        // Deteção robusta de defesas: prioridade Direito > Esquerdo > Central.
+        // Só cai em Defesa Central quando não há nenhum sinal de lateralidade.
+        const isDefenderLike = /\bD\b|\bDEF\b|\bCB\b|\bRB\b|\bLB\b|\bWB\b|\bRWB\b|\bLWB\b|\bDC\b|\bDD\b|\bDE\b|\bBACK\b/.test(t);
+        if (isDefenderLike) {
+          if (/\bRB\b|\bRWB\b|\bWBR\b|\bDD\b|\bDR\b|DIREIT/.test(t)) return 'DD';
+          if (/\bLB\b|\bLWB\b|\bWBL\b|\bDE\b|\bDL\b|ESQUERD/.test(t)) return 'DE';
+          // Notação FM "D (R)", "D (L)", "D (RLC)", "D (C)" -> depois de normalizado fica "D R", "D RLC", etc.
+          const tokens = t.split(' ').filter(Boolean);
+          const suffix = tokens.slice(1).join('');
+          if (suffix) {
+            if (suffix.includes('R')) return 'DD';
+            if (suffix.includes('L')) return 'DE';
+            if (suffix.includes('C')) return 'DC';
+          }
+          return 'DC'; // defesa reconhecida mas verdadeiramente ambígua
+        }
+        if (/\bDM\b|\bMDC\b/.test(t)) return 'MDC';
+        if (/\bAM\b|\bMOC\b/.test(t)) return 'MC';
+        if (/\bRM\b|\bRW\b/.test(t)) return 'ED';
+        if (/\bLM\b|\bLW\b|\bME\b/.test(t)) return 'EE';
+        if (/\bCM\b/.test(t)) return 'MC';
+        if (/\bSS\b|\bSA\b|\bST\b/.test(t)) return 'PL';
+      }
+      // 5) frases mais longas com palavras-chave reconhecíveis (ex. "Defesa lateral direito")
+      if (/DIREIT/.test(t) && /DEFES|LATERAL/.test(t)) return 'DD';
+      if (/ESQUERD/.test(t) && /DEFES|LATERAL/.test(t)) return 'DE';
+      if (/CENTRAL/.test(t) && /DEFES/.test(t)) return 'DC';
+      if (/DEFENSIV/.test(t) && /MEDI/.test(t)) return 'MDC';
+      if (/CENTR/.test(t) && /MEDI/.test(t)) return 'MC';
+      if (/DIREIT/.test(t) && /EXTREM/.test(t)) return 'ED';
+      if (/ESQUERD/.test(t) && /EXTREM/.test(t)) return 'EE';
+      if (/PONTA/.test(t) && /LANC/.test(t)) return 'PL';
+      if (/GUARDA/.test(t) || /GUARD/.test(t)) return 'GR';
+
+      // Verdadeiramente irreconhecível: mantém DC como último recurso, mas isto só deve
+      // acontecer com texto que não corresponde a nenhuma posição conhecida.
+      return 'DC';
+    }
+
+    // ---- Conversão de escala 0-200 -> 0-5 e limpeza de dinheiro ----
+    function convertRatingToInternalScale(raw) {
+      if (raw === null || raw === undefined || raw === '') return null;
+      const n = Number(String(raw).replace(',', '.'));
+      if (!Number.isFinite(n)) return null;
+      // Já está na escala interna (0-5, ou 0-20 "estrelas"/"CA" antigo do FM em alguns exports)
+      if (n <= 5) return clampRating(n);
+      if (n <= 20) return clampRating(n / 4);
+      // Escala clássica do FM (0-200)
+      return clampRating(n / 40);
+    }
+
+    function parseMoneyToMillions(raw) {
+      if (raw === null || raw === undefined || raw === '') return null;
+      const s0 = String(raw).trim();
+      if (!s0) return null;
+      // Intervalo "92M € - 113M €" / "20-25M" / "900k a 1.2M": faz a média dos dois lados
+      const rangeMatch = s0.match(/^(.+?)\s*(?:-|–|—|\bto\b|\ba\b)\s*(.+)$/i);
+      if (rangeMatch && /\d/.test(rangeMatch[1]) && /\d/.test(rangeMatch[2])) {
+        const a = parseSingleMoney(rangeMatch[1]);
+        const b = parseSingleMoney(rangeMatch[2]);
+        if (a !== null && b !== null) return clampMoney(Math.round(((a + b) / 2) * 100) / 100);
+        if (a !== null) return a;
+        if (b !== null) return b;
+        return null;
+      }
+      return parseSingleMoney(s0);
+    }
+
+    function parseSingleMoney(raw) {
+      if (raw === null || raw === undefined || raw === '') return null;
+      let sOrig = String(raw).trim().replace(/[€$£]/g, '').trim();
+      if (!sOrig) return null;
+      let suffix = null;
+      // 'm' minúsculo = mil (milhares); 'M' maiúsculo = milhões; 'k'/'K' = milhares
+      if (/m$/.test(sOrig)) { suffix = 'k'; sOrig = sOrig.slice(0, -1); }
+      else if (/M$/.test(sOrig)) { suffix = 'm'; sOrig = sOrig.slice(0, -1); }
+      else if (/k$/i.test(sOrig)) { suffix = 'k'; sOrig = sOrig.slice(0, -1); }
+      let s = sOrig.trim().toLowerCase();
+      // formatos "1.234.567" (europeu) ou "1,234,567" (en) sem casas decimais explícitas
+      if (/^\d{1,3}(\.\d{3})+$/.test(s)) s = s.replace(/\./g, '');
+      else if (/^\d{1,3}(,\d{3})+$/.test(s)) s = s.replace(/,/g, '');
+      else s = s.replace(',', '.');
+      const n = Number(s);
+      if (!Number.isFinite(n)) return null;
+      let millions;
+      if (suffix === 'm') millions = n; // já em milhões
+      else if (suffix === 'k') millions = n / 1000; // milhares -> milhões
+      else millions = n > 1000 ? n / 1000000 : n; // valor em unidades cheias -> milhões, senão já em milhões
+      return clampMoney(Math.round(millions * 100) / 100);
+    }
+
+    function looksLikeMoneyCell(text) {
+      if (!text) return false;
+      const s = String(text).trim();
+      if (!s) return false;
+      return /[€$£]/.test(s) || /\d\s*[mk]\b/i.test(s) || /^\d+([.,]\d+)?\s*(-|–|—)\s*\d+([.,]\d+)?/.test(s);
+    }
+
+    function cleanPlayerName(raw) {
+      return String(raw || '')
+        .replace(/["']/g, '')
+        .replace(/\s+/g, ' ')
+        .trim();
+    }
+
+    // ---- Parser de CSV tolerante (vírgula, ponto e vírgula, tab, aspas) ----
+    function detectDelimiter(sampleLine) {
+      const candidates = [',', ';', '\t'];
+      let best = ',', bestCount = -1;
+      candidates.forEach(d => {
+        const count = sampleLine.split(d).length;
+        if (count > bestCount) { bestCount = count; best = d; }
+      });
+      return best;
+    }
+
+    function parseCsvLine(line, delimiter) {
+      const out = [];
+      let cur = '';
+      let inQuotes = false;
+      for (let i = 0; i < line.length; i++) {
+        const ch = line[i];
+        if (inQuotes) {
+          if (ch === '"') {
+            if (line[i + 1] === '"') { cur += '"'; i++; }
+            else inQuotes = false;
+          } else cur += ch;
+        } else if (ch === '"') {
+          inQuotes = true;
+        } else if (ch === delimiter) {
+          out.push(cur);
+          cur = '';
+        } else {
+          cur += ch;
+        }
+      }
+      out.push(cur);
+      return out.map(v => v.trim());
+    }
+
+    const HEADER_ALIASES = {
+      name: ['nome', 'name', 'jogador', 'player'],
+      position: ['posicao', 'posição', 'position', 'pos'],
+      value: ['preco', 'preço', 'valor', 'price', 'value', 'valor estimado', 'preco estimado', 'preço estimado',
+        'preco em milhoes', 'preço em milhões', 'valor de mercado', 'market value', 'transfer value',
+        'transfer fee', 'custo', 'cost', 'valor m', 'preco m', 'valor euros', 'valor eur', '€', '€ m', '€m', '€(m)'],
+      age: ['idade', 'age'],
+      ca: ['ca', 'current ability'],
+      pa: ['pa', 'potential ability']
+    };
+    const PRICE_HEADER_KEYWORDS = ['preco', 'valor', 'price', 'value', 'custo', 'cost', 'transfer', 'market', 'fee'];
+
+    function detectPriceColumnIndex(headerCells) {
+      const norm = headerCells.map(h => normalizeToken(h).toLowerCase());
+      // 1) alias exato
+      let idx = norm.findIndex(h => HEADER_ALIASES.value.some(alias => h === normalizeToken(alias).toLowerCase()));
+      if (idx !== -1) return idx;
+      // 2) o cabeçalho normalizado contém uma palavra-chave de preço
+      idx = norm.findIndex(h => PRICE_HEADER_KEYWORDS.some(k => h.includes(k)));
+      if (idx !== -1) return idx;
+      // 3) sinais no texto original (antes de normalizar): símbolo de moeda, ou padrão "(M)"/"M€"
+      idx = headerCells.findIndex(h => /[€$£]/.test(String(h)) || /\(\s*m\s*\)/i.test(String(h)) || /\bm\s*[€$£]?\s*$/i.test(String(h).trim()));
+      if (idx !== -1) return idx;
+      return -1;
+    }
+
+    function mapHeaderRow(headerCells) {
+      const norm = headerCells.map(h => normalizeToken(h).toLowerCase());
+      const mapping = {};
+      Object.keys(HEADER_ALIASES).forEach(field => {
+        if (field === 'value') return; // tratado à parte, com deteção mais tolerante
+        const idx = norm.findIndex(h => HEADER_ALIASES[field].some(alias => h === normalizeToken(alias).toLowerCase()));
+        if (idx !== -1) mapping[field] = idx;
+      });
+      const valueIdx = detectPriceColumnIndex(headerCells);
+      if (valueIdx !== -1) mapping.value = valueIdx;
+      return mapping;
+    }
+
+    function looksLikeHeaderRow(cells) {
+      const norm = cells.map(c => normalizeToken(c).toLowerCase());
+      return Object.keys(HEADER_ALIASES).some(field => HEADER_ALIASES[field].some(alias => norm.includes(normalizeToken(alias).toLowerCase())));
+    }
+
+    function parseCsvText(text) {
+      const warnings = [];
+      const clean = text.replace(/^\uFEFF/, '').replace(/\r\n/g, '\n').replace(/\r/g, '\n');
+      const lines = clean.split('\n').map(l => l.trim()).filter(l => l.length);
+      if (!lines.length) return { rows: [], warnings: ['O ficheiro está vazio.'] };
+
+      const delimiter = detectDelimiter(lines[0]);
+      const firstCells = parseCsvLine(lines[0], delimiter);
+      let mapping, dataLines;
+      if (looksLikeHeaderRow(firstCells)) {
+        mapping = mapHeaderRow(firstCells);
+        dataLines = lines.slice(1);
+      } else {
+        // sem cabeçalho reconhecível: assume ordem fixa Nome, Posição, Preço, Idade, CA, PA
+        mapping = { name: 0, position: 1, value: 2, age: 3, ca: 4, pa: 5 };
+        dataLines = lines;
+        warnings.push('Não foi encontrado um cabeçalho reconhecível; assumi a ordem Nome, Posição, Preço, Idade, CA, PA.');
+      }
+      if (mapping.name === undefined) {
+        warnings.push('Coluna "Nome" não identificada; a usar a primeira coluna como nome.');
+        mapping.name = 0;
+      }
+
+      const rows = [];
+      const byNormName = new Map();
+      dataLines.forEach((line, i) => {
+        if (!line) return;
+        const cells = parseCsvLine(line, delimiter);
+        const get = field => (mapping[field] !== undefined ? cells[mapping[field]] : undefined);
+        const rawName = get('name');
+        const name = cleanPlayerName(rawName);
+        if (!name) {
+          warnings.push('Linha ' + (i + 2) + ' ignorada: sem nome.');
+          return;
+        }
+        const ageRaw = get('age');
+        const age = ageRaw !== undefined && ageRaw !== '' && Number.isFinite(Number(ageRaw)) ? Math.round(Number(ageRaw)) : null;
+        if (ageRaw !== undefined && ageRaw !== '' && age === null) warnings.push('Linha ' + (i + 2) + ' (' + name + '): idade inválida, ficou por preencher.');
+        const caRaw = get('ca');
+        const ca = convertRatingToInternalScale(caRaw);
+        if (caRaw !== undefined && caRaw !== '' && ca === null) warnings.push('Linha ' + (i + 2) + ' (' + name + '): CA inválido.');
+        const paRaw = get('pa');
+        const pa = convertRatingToInternalScale(paRaw);
+        if (paRaw !== undefined && paRaw !== '' && pa === null) warnings.push('Linha ' + (i + 2) + ' (' + name + '): PA inválido.');
+        const valueRaw = mapping.value !== undefined
+          ? get('value')
+          : (() => {
+              const usedIdx = new Set(Object.values(mapping));
+              const candidate = cells.find((c, ci) => !usedIdx.has(ci) && looksLikeMoneyCell(c));
+              return candidate;
+            })();
+        const value = parseMoneyToMillions(valueRaw);
+        const position = normalizePositionCode(get('position'));
+
+        const key = normalizeToken(name);
+        if (byNormName.has(key)) {
+          // duplicado dentro do próprio ficheiro: mantém a última ocorrência (mais recente/atualizada)
+          const idx = byNormName.get(key);
+          rows[idx] = { name, age, position, ca, pa, value };
+          warnings.push('Nome duplicado no ficheiro (' + name + '): mantida a última linha.');
+          return;
+        }
+        byNormName.set(key, rows.length);
+        rows.push({ name, age, position, ca, pa, value });
+      });
+
+      fillMissingValuesWithEstimate(rows, warnings);
+
+      return { rows, warnings };
+    }
+
+    const DEFAULT_VALUE_FALLBACK_M = 1; // fallback coerente quando não há qualquer preço no ficheiro
+
+    function computeMedian(nums) {
+      if (!nums.length) return null;
+      const sorted = [...nums].sort((a, b) => a - b);
+      const mid = Math.floor(sorted.length / 2);
+      return sorted.length % 2 ? sorted[mid] : (sorted[mid - 1] + sorted[mid]) / 2;
+    }
+
+    function fillMissingValuesWithEstimate(rows, warnings) {
+      const known = rows.map(r => r.value).filter(v => v !== null && v !== undefined && Number.isFinite(v));
+      const median = computeMedian(known);
+      const estimate = clampMoney(Math.round(((median !== null ? median : DEFAULT_VALUE_FALLBACK_M)) * 100) / 100);
+      let filled = 0;
+      rows.forEach(r => {
+        if (r.value === null || r.value === undefined) {
+          r.value = estimate;
+          filled++;
+        }
+      });
+      if (filled) {
+        const basis = median !== null ? ('mediana dos ' + known.length + ' preço(s) reconhecido(s) ≈ ' + estimate.toFixed(1) + 'M') : ('sem nenhum preço no ficheiro; usado fallback padrão de ' + estimate.toFixed(1) + 'M');
+        warnings.push(filled + ' jogador(es) sem preço no CSV: valor preenchido automaticamente (' + basis + '). Podes corrigir manualmente na tabela.');
+      }
+    }
+
+    // ---- Matching de jogadores já existentes por nome ----
+    function levenshteinDistance(a, b) {
+      const m = a.length, n = b.length;
+      if (!m) return n;
+      if (!n) return m;
+      let prev = Array.from({ length: n + 1 }, (_, j) => j);
+      for (let i = 1; i <= m; i++) {
+        const curr = [i];
+        for (let j = 1; j <= n; j++) {
+          curr[j] = a[i - 1] === b[j - 1] ? prev[j - 1] : 1 + Math.min(prev[j - 1], prev[j], curr[j - 1]);
+        }
+        prev = curr;
+      }
+      return prev[n];
+    }
+    function nameSimilarity(a, b) {
+      const maxLen = Math.max(a.length, b.length);
+      if (!maxLen) return 1;
+      return 1 - levenshteinDistance(a, b) / maxLen;
+    }
+    function attachComparisonPasteListener() {
+      if (window.__cvPasteHandler) return;
+      window.__cvPasteHandler = (e) => {
+        if (!state.comparisonPhotoModal) return;
+        const items = (e.clipboardData && e.clipboardData.items) || [];
+        let imageItem = null;
+        for (let i = 0; i < items.length; i++) {
+          if (items[i].type && items[i].type.startsWith('image/')) { imageItem = items[i]; break; }
+        }
+        if (!imageItem) { showToast('A área de transferência não contém uma imagem.', 'warn'); return; }
+        e.preventDefault();
+        setComparisonPhotoFile(imageItem.getAsFile());
+      };
+      document.addEventListener('paste', window.__cvPasteHandler);
+    }
+    function detachComparisonPasteListener() {
+      if (window.__cvPasteHandler) {
+        document.removeEventListener('paste', window.__cvPasteHandler);
+        window.__cvPasteHandler = null;
+      }
+    }
+    function setComparisonPhotoFile(file) {
+      if (!file || !state.comparisonPhotoModal) return;
+      if (state.comparisonPhotoModal.previewUrl) URL.revokeObjectURL(state.comparisonPhotoModal.previewUrl);
+      state.comparisonPhotoModal.file = file;
+      state.comparisonPhotoModal.previewUrl = URL.createObjectURL(file);
+      renderModal();
+    }
+    function cancelComparisonPhotoModal() {
+      detachComparisonPasteListener();
+      if (state.comparisonPhotoModal && state.comparisonPhotoModal.previewUrl) URL.revokeObjectURL(state.comparisonPhotoModal.previewUrl);
+      state.comparisonPhotoModal = null;
+      renderModal();
+    }
+    async function confirmComparisonPhotoImport() {
+      const modal = state.comparisonPhotoModal;
+      if (!modal || !modal.file) { showToast('Escolhe um ficheiro ou cola uma imagem primeiro.', 'warn'); return; }
+      detachComparisonPasteListener();
+      const file = modal.file;
+      const previewUrl = modal.previewUrl;
+      state.comparisonPhotoModal = null;
+      renderModal();
+      await handleComparisonPhotoFile(file);
+      if (previewUrl) URL.revokeObjectURL(previewUrl);
+    }
+    function renderComparisonPhotoModal(root) {
+      const modal = state.comparisonPhotoModal;
+      root.innerHTML = modalShell('Importar Foto · Comparação', '520px', `
+        <div class="muted" style="margin-bottom:14px;line-height:1.6;">Escolhe um ficheiro ou cola uma captura de ecrã diretamente (Ctrl+V / Cmd+V).</div>
+        <div style="display:flex;gap:8px;margin-bottom:14px;">
+          <button class="btn btn-ghost" id="cvp-choose-file">${icon('plus')} Escolher ficheiro</button>
+          <input type="file" id="cvp-file-input" accept="image/*" style="display:none;" />
+        </div>
+        <div id="cvp-paste-zone" tabindex="0" style="border:1px dashed var(--line);border-radius:12px;padding:${modal.previewUrl ? '10px' : '28px'};text-align:center;color:var(--muted);cursor:text;">
+          ${modal.previewUrl
+            ? `<img src="${modal.previewUrl}" style="max-width:100%;max-height:220px;border-radius:8px;display:block;margin:0 auto;" />`
+            : `<div>Clica aqui e cola a imagem com <strong>Ctrl+V</strong> (ou Cmd+V)</div>`}
+        </div>
+        ${modal.file ? `<div class="faint" style="margin-top:8px;">Imagem pronta a analisar.</div>` : ''}
+        <div class="modal-footer"><button class="btn btn-ghost" id="cvp-cancel">Cancelar</button><button class="btn btn-primary" id="cvp-analyze" ${modal.file ? '' : 'disabled'}>${icon('plus')} Analisar imagem</button></div>
+      `);
+      attachModalClose(root, cancelComparisonPhotoModal);
+      root.querySelector('#cvp-cancel').onclick = cancelComparisonPhotoModal;
+      root.querySelector('#cvp-analyze').onclick = confirmComparisonPhotoImport;
+      root.querySelector('#cvp-choose-file').onclick = () => root.querySelector('#cvp-file-input').click();
+      root.querySelector('#cvp-file-input').onchange = e => {
+        const f = e.target.files && e.target.files[0];
+        if (f) setComparisonPhotoFile(f);
+      };
+      const pasteZone = root.querySelector('#cvp-paste-zone');
+      if (pasteZone) pasteZone.focus();
+    }
+
+    function fileToBase64(file) {
+      return new Promise((resolve, reject) => {
+        const reader = new FileReader();
+        reader.onload = () => resolve(String(reader.result).split(',')[1] || '');
+        reader.onerror = () => reject(new Error('Falha a ler o ficheiro.'));
+        reader.readAsDataURL(file);
+      });
+    }
+
+    // Encontra a linha de atributo do perfil atual que corresponde ao nome extraído da imagem:
+    // 1) correspondência exata normalizada, 2) semelhança aproximada, 3) substring como último recurso.
+    function matchComparisonAttribute(profile, extractedName) {
+      const target = normalizeToken(extractedName);
+      if (!target) return null;
+      let attr = profile.attributes.find(a => normalizeToken(a.label) === target);
+      if (attr) return attr;
+      let best = null, bestScore = 0;
+      profile.attributes.forEach(a => {
+        const score = nameSimilarity(normalizeToken(a.label), target);
+        if (score > bestScore) { bestScore = score; best = a; }
+      });
+      if (best && bestScore >= 0.8) return best;
+      attr = profile.attributes.find(a => {
+        const label = normalizeToken(a.label);
+        return label.length > 3 && target.length > 3 && (label.includes(target) || target.includes(label));
+      });
+      return attr || null;
+    }
+
+    async function handleComparisonPhotoFile(file) {
+      if (!file) return;
+      const profile = comparisonActiveProfile();
+      if (!profile || !profile.attributes.length) { showToast('O perfil atual ainda não tem atributos para preencher.', 'warn'); return; }
+      showToast('A analisar a imagem com IA…', 'ok');
+      try {
+        const base64 = await fileToBase64(file);
+        const mediaType = (file.type && file.type.startsWith('image/')) ? file.type : 'image/png';
+        const promptText = 'Esta imagem é um ecrã de comparação de jogadores do Football Manager, com dois jogadores (A à esquerda, B à direita) e uma lista de atributos, cada um com o valor de A e o valor de B. Extrai TODOS os atributos visíveis com os respetivos valores numéricos. Responde APENAS com JSON válido, sem markdown nem texto adicional, no formato exato: {"jogadorA": "nome do jogador A ou null", "jogadorB": "nome do jogador B ou null", "atributos": [{"nome": "nome do atributo tal como aparece na imagem, em português", "a": numero, "b": numero}]}.';
+        const response = await fetch('https://api.anthropic.com/v1/messages', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            model: 'claude-sonnet-4-6',
+            max_tokens: 1500,
+            messages: [{
+              role: 'user',
+              content: [
+                { type: 'image', source: { type: 'base64', media_type: mediaType, data: base64 } },
+                { type: 'text', text: promptText }
+              ]
+            }]
+          })
+        });
+        if (!response.ok) throw new Error('Erro da API (' + response.status + ')');
+        const data = await response.json();
+        const textBlock = (data.content || []).find(b => b.type === 'text');
+        if (!textBlock || !textBlock.text) throw new Error('A resposta não contém texto.');
+        const clean = textBlock.text.replace(/```json|```/g, '').trim();
+        const parsed = JSON.parse(clean);
+        const items = Array.isArray(parsed.atributos) ? parsed.atributos : [];
+        if (!items.length) { showToast('Não foi possível identificar atributos na imagem.', 'warn'); return; }
+
+        let matched = 0, unmatched = 0;
+        items.forEach(item => {
+          const attr = matchComparisonAttribute(profile, item.nome);
+          if (!attr) { unmatched++; return; }
+          if (!state.comparisonSession.values[attr.id]) state.comparisonSession.values[attr.id] = { a: '', b: '' };
+          const a = Number(item.a), b = Number(item.b);
+          if (Number.isFinite(a)) state.comparisonSession.values[attr.id].a = a;
+          if (Number.isFinite(b)) state.comparisonSession.values[attr.id].b = b;
+          matched++;
+        });
+        persistComparison();
+        render();
+        const names = [parsed.jogadorA, parsed.jogadorB].filter(Boolean).join(' vs ');
+        showToast('Preenchidos ' + matched + ' atributos' + (names ? ' (' + names + ')' : '') + '.' + (unmatched ? ' ' + unmatched + ' não reconhecidos — preenche-os à mão.' : ''), 'ok');
+      } catch (err) {
+        showToast('Não foi possível analisar a imagem: ' + (err && err.message ? err.message : 'erro desconhecido'), 'warn');
+      }
+    }
+
+    function findExistingPlayerMatches(extractedName) {
+      const target = normalizeToken(extractedName);
+      if (!target) return [];
+      const exact = state.players.filter(p => normalizeToken(p.name) === target);
+      if (exact.length) return exact;
+      const fuzzy = state.players
+        .map(p => ({ p, score: nameSimilarity(normalizeToken(p.name), target) }))
+        .filter(x => x.score >= 0.8)
+        .sort((a, b) => b.score - a.score);
+      if (fuzzy.length) return fuzzy.map(x => x.p);
+      // sem match exato/aproximado forte: sugere aproximações (substring) para escolha manual, sem pré-selecionar
+      return state.players.filter(p => {
+        const name = normalizeToken(p.name);
+        return name.length > 3 && target.length > 3 && (name.includes(target) || target.includes(name));
+      });
+    }
+
+    function renderToast() {
+      const root = document.getElementById('toast-root');
+      root.innerHTML = state.toast ? `<div class="toast" style="border-color:${state.toast.tone === 'warn' ? 'var(--red-2)' : 'var(--green-2)'}">${esc(state.toast.msg)}</div>` : '';
+    }
+
+    function renderFatal(error) {
+      const app = document.getElementById('app');
+      app.innerHTML = '<div style="min-height:100vh;display:grid;place-items:center;padding:24px;"><div style="max-width:720px;width:100%;background:#11161d;border:1px solid #25303b;border-radius:18px;padding:24px;color:#e7edf2;font-family:Inter,system-ui,sans-serif;"><h1 style="margin:0 0 12px;font:600 28px Oswald,Arial Narrow,sans-serif;letter-spacing:.03em;">FM Squad Planner</h1><p style="margin:0 0 12px;color:#99a5b3;line-height:1.6;">A app encontrou um erro ao arrancar. Isto costuma acontecer quando o preview bloqueia alguma API do browser ou quando houve um erro de JavaScript.</p><pre style="white-space:pre-wrap;word-break:break-word;background:#0b0f14;border:1px solid #25303b;border-radius:12px;padding:12px;color:#e08a84;overflow:auto;">' + esc(error && (error.stack || error.message) || String(error)) + '</pre></div></div>';
+    }
+
+    // ================= i18n (PT / EN) =================
+    let currentLang = (function () { const l = readKey('fm-lang', 'pt'); return l === 'en' ? 'en' : 'pt'; })();
+    document.documentElement.lang = currentLang === 'en' ? 'en' : 'pt-PT';
+
+    function setLang(lang) {
+      currentLang = lang === 'en' ? 'en' : 'pt';
+      writeKey('fm-lang', currentLang);
+      document.documentElement.lang = currentLang === 'en' ? 'en' : 'pt-PT';
+      render();
+    }
+
+    const I18N_EN = new Map(Object.entries({
+      // Topbar / nav
+      'Época': 'Season', 'Tática': 'Tactic', 'Não': 'No', 'Sim': 'Yes', 'Sem táticas': 'No tactics',
+      'Nova época': 'New season', 'Apagar época atual': 'Delete current season',
+      'Nova tática': 'New tactic', 'Apagar tática atual': 'Delete current tactic',
+      'Plantel': 'Squad', 'Plantel da Época': 'Season Squad', 'Campo Tático': 'Tactical Pitch',
+      'Evolução': 'Progress', 'Estado do Plantel': 'Squad Status', 'Papel da Época': 'Season Role',
+      'Papel na Época': 'Season Role', 'Comparação': 'Comparison', 'Contratações': 'Signings', 'Olheiros': 'Scouts',
+      // Positions
+      'Guarda redes': 'Goalkeeper', 'Defesa Central': 'Centre-Back', 'Defesa Direito': 'Right-Back',
+      'Defesa Esquerdo': 'Left-Back', 'Medio Defensivo': 'Defensive Midfielder', 'Medio Centro': 'Central Midfielder',
+      'Extremo Direito': 'Right Winger', 'Extremo Esquerdo': 'Left Winger', 'Ponta de Lanca': 'Striker',
+      'GR': 'GK', 'DC': 'CB', 'DD': 'RB', 'DE': 'LB', 'MDC': 'DM', 'MC': 'CM', 'ED': 'RW', 'EE': 'LW', 'PL': 'ST',
+      'D (C)': 'D (C)', 'D (D)': 'D (R)', 'D (E)': 'D (L)', 'MD': 'DM', 'M (C)': 'M (C)',
+      'MO (D)': 'AM (R)', 'MO (E)': 'AM (L)', 'PL (C)': 'ST (C)',
+      // Slot labels
+      'Guarda-redes': 'Goalkeeper', 'Defesa central direito': 'Right centre-back', 'Defesa central esquerdo': 'Left centre-back',
+      'Defesa central': 'Centre-back', 'Defesa direito': 'Right-back', 'Defesa esquerdo': 'Left-back',
+      'Medio defensivo': 'Defensive midfielder', 'Medio defensivo direito': 'Right defensive midfielder',
+      'Medio defensivo esquerdo': 'Left defensive midfielder', 'Medio centro direito': 'Right central midfielder',
+      'Medio centro esquerdo': 'Left central midfielder', 'Medio centro': 'Central midfielder',
+      'Medio centro ofensivo': 'Attacking midfielder', 'Extremo direito': 'Right winger', 'Extremo esquerdo': 'Left winger',
+      'Extremo direito alto': 'High right winger', 'Extremo esquerdo alto': 'High left winger',
+      'Ponta de lanca': 'Striker', 'Ponta de lanca direito': 'Right striker', 'Ponta de lanca esquerdo': 'Left striker',
+      // Statuses / roles / regions
+      'Fica': 'Stays', 'Vender': 'Sell', 'Emprestar': 'Loan out', 'Vendido': 'Sold', 'Emprestado': 'Loaned out',
+      'Por Decidir': 'Undecided', 'Inscrito': 'Registered', 'Não Inscrito': 'Not Registered',
+      'Titular': 'Starter', 'Suplente': 'Substitute', 'Restantes': 'Remaining',
+      'África': 'Africa', 'Ásia': 'Asia', 'Europa Ocidental': 'Western Europe', 'Europa Central': 'Central Europe',
+      'América do Sul': 'South America', 'América do Norte': 'North America', 'Oceânia': 'Oceania', 'Outra': 'Other',
+      // Table headers / common
+      'Nome': 'Name', 'Posição': 'Position', 'Idade': 'Age', 'Estado': 'Status', 'Papel': 'Role', 'Região': 'Region',
+      'Notas': 'Notes', 'Notas (opcional)': 'Notes (optional)', 'Valor': 'Value', 'Perfil': 'Profile',
+      'Atributo': 'Attribute', 'Multiplicador': 'Multiplier', 'Total parcial': 'Partial total',
+      'Editar': 'Edit', 'Apagar': 'Delete', 'Remover': 'Remove', 'Cancelar': 'Cancel', 'Guardar': 'Save',
+      'Voltar': 'Back', 'Match': 'Match', 'Compatíveis': 'Compatible', 'Outros jogadores': 'Other players',
+      // Plantel
+      'Todas as posições': 'All positions', 'Todos os estados': 'All statuses', 'Importar CSV': 'Import CSV',
+      'Novo jogador': 'New player', 'Ainda não há jogadores nesta época.': 'There are no players in this season yet.',
+      'Sem jogadores.': 'No players.', 'Sem jogadores nesta época.': 'No players in this season.',
+      'CA, PA e Preço iguais à época anterior — pode não ter sido processado': 'CA, PA and Price are the same as the previous season — may not have been processed',
+      // Campo
+      'Ainda não há táticas nesta época.': 'There are no tactics in this season yet.', 'Criar tática': 'Create tactic',
+      'Editar tática': 'Edit tactic', 'Apagar tática': 'Delete tactic', 'Titulares': 'Starters', 'Suplentes': 'Substitutes',
+      'Escolher jogador': 'Choose player',
+      'Sem suplentes escalados ainda nesta tática.': 'No substitutes selected yet in this tactic.',
+      'Sem titulares escalados ainda nesta tática.': 'No starters selected yet in this tactic.',
+      'Jogadores do Plantel da Época que ainda não estão nem em titulares nem em suplentes desta tática.': 'Season Squad players who are in neither the starters nor the substitutes of this tactic.',
+      'Não há jogadores restantes — todos já estão escalados, ou não há jogadores elegíveis nesta época.': 'There are no remaining players — everyone is already selected, or there are no eligible players this season.',
+      'Escalar': 'Assign',
+      // Olheiros / Contratações
+      'Todas as regiões': 'All regions', 'Novo olheiro': 'New scout', 'Editar olheiro': 'Edit scout',
+      'Gere os olheiros e a região onde cada um trabalha.': 'Manage your scouts and the region each one works in.',
+      'Ainda não há olheiros registados.': 'No scouts registered yet.',
+      'Novo candidato': 'New target', 'Editar candidato': 'Edit target',
+      'Ainda não há candidatos registados.': 'No targets registered yet.',
+      'Candidatos a contratar — organizados por posição, sem CSV. Adicionados manualmente para comparar antes de meter no plantel.': 'Transfer targets — organised by position, no CSV. Added manually so you can compare them before adding to the squad.',
+      'Capacidade (CA)': 'Current ability (CA)', 'Potencial (PA)': 'Potential ability (PA)',
+      'Preço / Valor (M)': 'Price / Value (M)', 'RH (Real Hability, opcional)': 'RH (Real Ability, optional)',
+      'Posição principal': 'Main position', 'Estado do plantel': 'Squad status', 'Papel da época': 'Season role',
+      'Posições secundárias': 'Secondary positions', 'Editar jogador': 'Edit player',
+      // Evolução
+      'Esta é a primeira época registada. Ainda não há época anterior para comparar.': 'This is the first recorded season. There is no previous season to compare yet.',
+      'Maiores subidas CA': 'Biggest CA increases', 'Maiores descidas CA': 'Biggest CA decreases',
+      'Novos no plantel': 'New in the squad', 'Sem dados.': 'No data.',
+      // Comparação
+      'Apagar perfil': 'Delete profile', 'Importar Foto': 'Import Photo', 'Novo perfil': 'New profile',
+      'Nome do novo perfil': 'New profile name', 'Nome do atributo': 'Attribute name', 'Remover atributo': 'Remove attribute',
+      'Compara jogadores/candidatos por atributo: preenche o valor no lado A ou no lado B consoante quem tiver a stat mais alta, e ajusta o multiplicador de importância.': 'Compare players/targets by attribute: fill in the value on side A or side B depending on who has the higher stat, and adjust the importance multiplier.',
+      'Ainda não há atributos neste perfil. Usa "+ Atributo" para começar.': 'There are no attributes in this profile yet. Use "+ Attribute" to get started.',
+      'Guarda-redes ': 'Goalkeepers',
+      'Defesas': 'Defenders', 'Médios': 'Midfielders', 'Extremos': 'Wingers', 'Avançados': 'Forwards',
+      'Apagar perfil de comparação': 'Delete comparison profile',
+      'e os atributos configurados nele. Esta ação não pode ser desfeita.': 'and its configured attributes. This action cannot be undone.',
+      'Esta ação não pode ser desfeita.': 'This action cannot be undone.',
+      'Vais apagar o perfil': 'You are about to delete the profile', 'Vais apagar o olheiro': 'You are about to delete the scout',
+      'Vais apagar o candidato': 'You are about to delete the target', 'Vais apagar a época': 'You are about to delete the season',
+      'Vais apagar a tática': 'You are about to delete the tactic', 'Vais apagar': 'You are about to delete',
+      'e todas as estatísticas e táticas associadas a ela. Esta ação não pode ser desfeita.': 'and all statistics and tactics linked to it. This action cannot be undone.',
+      'desta época. Esta ação não pode ser desfeita.': 'from this season. This action cannot be undone.',
+      'Apagar olheiro': 'Delete scout', 'Apagar candidato': 'Delete target', 'Apagar época': 'Delete season',
+      'Apagar jogador': 'Delete player',
+      'Este jogador existe noutras épocas/táticas.': 'This player exists in other seasons/tactics.',
+      'Este jogador só existe nesta época.': 'This player only exists in this season.',
+      'Remover apenas desta época/tática': 'Remove from this season/tactic only',
+      'Apagar definitivamente todas as épocas': 'Delete permanently from all seasons',
+      // Season / tactic modals
+      'O plantel e as táticas atuais são herdados; as idades sobem +1 ano.': 'The current squad and tactics are inherited; ages go up by +1 year.',
+      'Etiqueta da época': 'Season label', 'Criar época': 'Create season',
+      'Escolhe um esquema predefinido com 11 posições ou cria uma tática personalizada.': 'Choose a preset formation with 11 positions or create a custom tactic.',
+      'Tática personalizada': 'Custom tactic', '11 slots manuais': '11 manual slots', 'Nome da tática': 'Tactic name',
+      'Nome da posição': 'Position name', 'Ex. 5-2-2-1': 'E.g. 5-2-2-1', 'Guardar alterações': 'Save changes',
+      // Import modal
+      'Importar jogadores do CSV': 'Import players from CSV',
+      'Carrega um ficheiro CSV com colunas Nome, Posição, Preço, Idade, CA, PA (por qualquer ordem, com cabeçalho). CA e PA numa escala de 0–200 são convertidos automaticamente para a escala interna de 0–5. Revê e corrige tudo antes de guardar.': 'Upload a CSV file with columns Name, Position, Price, Age, CA, PA (in any order, with a header). CA and PA on a 0–200 scale are automatically converted to the internal 0–5 scale. Review and correct everything before saving.',
+      'Escolhe o ficheiro CSV exportado do FM.': 'Choose the CSV file exported from FM.', 'Escolher CSV': 'Choose CSV',
+      'A ler o CSV…': 'Reading CSV…', 'Tentar novamente': 'Try again',
+      'Confirma que o ficheiro tem colunas Nome, Posição, Preço, Idade, CA, PA.': 'Make sure the file has the columns Name, Position, Price, Age, CA, PA.',
+      'Sem jogadores reconhecidos no CSV. Confirma as colunas Nome, Posição, Preço, Idade, CA, PA.': 'No players recognised in the CSV. Check the columns Name, Position, Price, Age, CA, PA.',
+      'Não foi possível ler este CSV.': 'Could not read this CSV.', 'O ficheiro está vazio.': 'The file is empty.',
+      'Falha a ler o ficheiro.': 'Failed to read the file.',
+      'Confirma e corrige os valores antes de guardar. Quando um jogador já existente é reconhecido pelo nome, os dados dele são atualizados em vez de criar um duplicado; em caso de ambiguidade, escolhe manualmente na coluna Match.': 'Check and correct the values before saving. When an existing player is recognised by name, their data is updated instead of creating a duplicate; if ambiguous, choose manually in the Match column.',
+      'Novo jogador ': 'New player', 'Reconhecido': 'Recognised', 'Ambíguo — escolhe': 'Ambiguous — choose', 'Confirma': 'Confirm',
+      'Criar novo jogador': 'Create new player', 'Outro ficheiro': 'Another file',
+      'Não foi encontrado um cabeçalho reconhecível; assumi a ordem Nome, Posição, Preço, Idade, CA, PA.': 'No recognisable header was found; assumed the order Name, Position, Price, Age, CA, PA.',
+      'Coluna "Nome" não identificada; a usar a primeira coluna como nome.': 'Column "Name" not identified; using the first column as the name.',
+      // Photo modal
+      'Importar Foto · Comparação': 'Import Photo · Comparison',
+      'Escolhe um ficheiro ou cola uma captura de ecrã diretamente (Ctrl+V / Cmd+V).': 'Choose a file or paste a screenshot directly (Ctrl+V / Cmd+V).',
+      'Escolher ficheiro': 'Choose file', 'Clica aqui e cola a imagem com': 'Click here and paste the image with',
+      '(ou Cmd+V)': '(or Cmd+V)', 'Imagem pronta a analisar.': 'Image ready to analyse.', 'Analisar imagem': 'Analyse image',
+      // Toasts
+      'Escreve um nome para o novo perfil.': 'Enter a name for the new profile.',
+      'Tem de existir pelo menos um perfil de comparação.': 'There must be at least one comparison profile.',
+      'Perfil de comparação apagado.': 'Comparison profile deleted.',
+      'Não é possível apagar a única época.': 'You cannot delete the only season.',
+      'Época apagada.': 'Season deleted.', 'Tática apagada.': 'Tactic deleted.', 'Olheiro apagado.': 'Scout deleted.',
+      'Candidato apagado.': 'Target deleted.',
+      'Uma tática tem de ter exatamente 11 posições.': 'A tactic must have exactly 11 positions.',
+      'Todas as posições precisam de um nome.': 'All positions need a name.',
+      'A área de transferência não contém uma imagem.': 'The clipboard does not contain an image.',
+      'Escolhe um ficheiro ou cola uma imagem primeiro.': 'Choose a file or paste an image first.',
+      'O perfil atual ainda não tem atributos para preencher.': 'The current profile has no attributes to fill in yet.',
+      'A analisar a imagem com IA…': 'Analysing the image with AI…',
+      'Não foi possível identificar atributos na imagem.': 'Could not identify any attributes in the image.',
+      'A resposta não contém texto.': 'The response contains no text.', 'erro desconhecido': 'unknown error',
+      'Jogador': 'Player', 'Olheiro': 'Scout', 'Candidato': 'Target'
+    }));
+    // Fix keys with deliberate trailing-space hacks above
+    I18N_EN.delete('Guarda-redes '); I18N_EN.delete('Novo jogador ');
+    I18N_EN.set('Guarda-redes', 'Goalkeeper');
+    I18N_EN.set('Novo jogador', 'New player');
+    I18N_EN.set('Reconhecido', 'Recognised');
+
+    const I18N_PATTERNS = [
+      [/^Média \((\d+)\)$/, (m) => 'Average (' + m[1] + ')'],
+      [/^Idade ([\d.]+)$/, (m) => 'Age ' + m[1]],
+      [/^Evolução vs\. época (.+)$/, (m) => 'Progress vs. season ' + m[1]],
+      [/^Ficheiro: (.*)$/, (m) => 'File: ' + m[1]],
+      [/^(\d+) linha\(s\) reconhecida\(s\)$/, (m) => m[1] + ' row(s) recognised'],
+      [/^(\d+) posições$/, (m) => m[1] + ' positions'],
+      [/^Posições: (\d+)\/11$/, (m) => 'Positions: ' + m[1] + '/11'],
+      [/^(\d+)\/11 posições nomeadas$/, (m) => m[1] + '/11 positions named'],
+      [/^Guardar (\d+) jogador\(es\)$/, (m) => 'Save ' + m[1] + ' player(s)'],
+      [/^Usar existente: (.*)$/, (m) => 'Use existing: ' + m[1]],
+      [/^(.*) guardado\.$/, (m) => m[1] + ' saved.'],
+      [/^(.*) removido desta época\.$/, (m) => m[1] + ' removed from this season.'],
+      [/^(.*) apagado definitivamente\.$/, (m) => m[1] + ' permanently deleted.'],
+      [/^Época (.+) criada — idades atualizadas \(\+1\)\.$/, (m) => 'Season ' + m[1] + ' created — ages updated (+1).'],
+      [/^Tática "(.*)" criada com 11 posições\.$/, (m) => 'Tactic "' + m[1] + '" created with 11 positions.'],
+      [/^Tática "(.*)" atualizada\.$/, (m) => 'Tactic "' + m[1] + '" updated.'],
+      [/^Perfil "(.*)" criado\.$/, (m) => 'Profile "' + m[1] + '" created.'],
+      [/^(\d+) jogador\(es\) importado\(s\)\.$/, (m) => m[1] + ' player(s) imported.'],
+      [/^Preenchidos (\d+) atributos(.*)$/, (m) => {
+        const rest = m[2].replace(/ (\d+) não reconhecidos — preenche-os à mão\./, ' $1 not recognised — fill them in manually.');
+        return 'Filled ' + m[1] + ' attributes' + rest;
+      }],
+      [/^Não foi possível analisar a imagem: (.*)$/, (m) => 'Could not analyse the image: ' + (trCore(m[1]) ?? m[1]) ],
+      [/^Erro da API \((\d+)\)$/, (m) => 'API error (' + m[1] + ')'],
+      [/^Linha (\d+) ignorada: sem nome\.$/, (m) => 'Row ' + m[1] + ' skipped: no name.'],
+      [/^Linha (\d+) \((.*)\): idade inválida, ficou por preencher\.$/, (m) => 'Row ' + m[1] + ' (' + m[2] + '): invalid age, left blank.'],
+      [/^Linha (\d+) \((.*)\): (CA|PA) inválido\.$/, (m) => 'Row ' + m[1] + ' (' + m[2] + '): invalid ' + m[3] + '.'],
+      [/^Nome duplicado no ficheiro \((.*)\): mantida a última linha\.$/, (m) => 'Duplicate name in file (' + m[1] + '): kept the last row.'],
+      [/^(\d+) jogador\(es\) sem preço no CSV: valor preenchido automaticamente \((.*)\)\. Podes corrigir manualmente na tabela\.$/, (m) => {
+        let basis = m[2]
+          .replace(/^mediana dos (\d+) preço\(s\) reconhecido\(s\) ≈ (.*)$/, 'median of the $1 recognised price(s) ≈ $2')
+          .replace(/^sem nenhum preço no ficheiro; usado fallback padrão de (.*)$/, 'no price in the file; used default fallback of $1');
+        return m[1] + ' player(s) without a price in the CSV: value filled in automatically (' + basis + '). You can correct it manually in the table.';
+      }]
+    ];
+
+    function trCore(s) {
+      if (I18N_EN.has(s)) return I18N_EN.get(s);
+      for (const [re, fn] of I18N_PATTERNS) {
+        const m = s.match(re);
+        if (m) return fn(m);
+      }
+      if (s.indexOf(' · ') > -1) {
+        const parts = s.split(' · ');
+        let changed = false;
+        const out = parts.map(p => {
+          const r = trCoreSimple(p);
+          if (r !== null) { changed = true; return r; }
+          return p;
+        });
+        if (changed) return out.join(' · ');
+      }
+      return null;
+    }
+    function trCoreSimple(s) {
+      if (I18N_EN.has(s)) return I18N_EN.get(s);
+      for (const [re, fn] of I18N_PATTERNS) {
+        const m = s.match(re);
+        if (m) return fn(m);
+      }
+      return null;
+    }
+    // Wrap so that pattern callbacks never receive/return null accidentally
+    (function () {
+      const orig = trCore;
+      trCore = function (s) { const r = orig(s); return r === undefined ? null : r; };
+    })();
+
+    function trText(str) {
+      const m = str.match(/^(\s*)([\s\S]*?)(\s*)$/);
+      if (!m || !m[2]) return str;
+      let r = trCore(m[2]);
+      if (r !== null && r !== undefined) return m[1] + r + m[3];
+      const pm = m[2].match(/^([^\p{L}\p{N}]+)([\s\S]+)$/u);
+      if (pm) {
+        r = trCore(pm[2]);
+        if (r !== null && r !== undefined) return m[1] + pm[1] + r + m[3];
+      }
+      return str;
+    }
+
+    const I18N_SKIP_TAGS = new Set(['SCRIPT', 'STYLE', 'TEXTAREA', 'INPUT']);
+    function translateNode(node) {
+      if (!node || !node.isConnected) return;
+      if (node.nodeType === 3) {
+        const p = node.parentNode;
+        if (p && I18N_SKIP_TAGS.has(p.nodeName)) return;
+        const t = trText(node.nodeValue);
+        if (t !== node.nodeValue) node.nodeValue = t;
+        return;
+      }
+      if (node.nodeType !== 1 || I18N_SKIP_TAGS.has(node.nodeName)) return;
+      const attrEls = [node, ...node.querySelectorAll('[title],[placeholder]')];
+      attrEls.forEach(el => {
+        ['title', 'placeholder'].forEach(a => {
+          if (el.hasAttribute && el.hasAttribute(a)) {
+            const v = el.getAttribute(a);
+            const t = trText(v);
+            if (t !== v) el.setAttribute(a, t);
+          }
+        });
+      });
+      const walker = document.createTreeWalker(node, NodeFilter.SHOW_TEXT, {
+        acceptNode(n) { return I18N_SKIP_TAGS.has(n.parentNode.nodeName) ? NodeFilter.FILTER_REJECT : NodeFilter.FILTER_ACCEPT; }
+      });
+      const texts = [];
+      while (walker.nextNode()) texts.push(walker.currentNode);
+      texts.forEach(n => { const t = trText(n.nodeValue); if (t !== n.nodeValue) n.nodeValue = t; });
+    }
+
+    new MutationObserver(muts => {
+      if (currentLang !== 'en') return;
+      muts.forEach(m => m.addedNodes.forEach(translateNode));
+    }).observe(document.body, { childList: true, subtree: true });
+    // ================= end i18n =================
+
+    window.addEventListener('error', function(e) { renderFatal(e.error || e.message || 'Erro desconhecido'); });
+
+    try {
+      loadState();
+      render();
+    } catch (error) {
+      renderFatal(error);
+    }
+  </script>
+</body>
+</html>
